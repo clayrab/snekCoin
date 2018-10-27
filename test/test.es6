@@ -1,10 +1,5 @@
 'use strict';
 
-const lkTestHelpers = require('lk-test-helpers')
-const {
-  expectThrow
-} = lkTestHelpers(web3)
-
 const Example = artifacts.require('./Example.sol')
 const ExampleReverts = artifacts.require('./ExampleReverts.sol')
 const Example2 = artifacts.require('./Example2.sol')
@@ -34,7 +29,11 @@ contract('TestProxyLibrary', (accounts) => {
 
       const exampleReverts = await ExampleReverts.new()
       await dispatcherStorage.replace(exampleReverts.address)
-      await expectThrow(thecontract.get())
+      thecontract.get().then(() => {
+        throw null;
+      }).catch(function(error) {
+        assert.isNotNull(error, "Expected revert, but got none");
+      });
     });
     it('measure gas costs', (done) => {
       done();
@@ -50,8 +49,12 @@ contract('TestProxyLibrary', (accounts) => {
       })
 
       it('fail', async () => {
-        await expectThrow(subject(accounts[1]))
-      })
+        subject(accounts[1]).then(() => {
+          throw null;
+        }).catch(function(error) {
+          assert.isNotNull(error, "Expected revert, but got none");
+        });
+      });
       it('success', async () => {
         const result = await subject(accounts[0])
         assert.isOk(result)
