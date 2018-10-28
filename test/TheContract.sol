@@ -1,11 +1,11 @@
-pragma solidity ^0.4.8;
+pragma solidity ^0.4.10;
 
-import "./LibInterface.sol";
+import "./LibInterfaceExample.sol";
 
 contract TheContract {
-  LibInterface.S s;
+  LibInterfaceExample.S s;
 
-  using LibInterface for LibInterface.S;
+  using LibInterfaceExample for LibInterfaceExample.S;
 
   function get() public constant returns (uint) {
     return s.getUint();
@@ -14,4 +14,5 @@ contract TheContract {
   function set(uint i) public {
     return s.setUint(i);
   }
+
 }

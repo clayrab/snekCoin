@@ -1,4 +1,4 @@
-pragma solidity ^0.4.8;
+pragma solidity ^0.4.10;
 
 import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 contract DispatcherStorage is Ownable {
