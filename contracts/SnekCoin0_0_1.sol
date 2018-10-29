@@ -14,11 +14,11 @@ library SnekCoin0_0_1 {
     _;
   }
 
-  function getSender(LibInterface.S storage s) public constant returns(address){
+  function getSender(LibInterface.S storage s) public view returns(address){
     return msg.sender;
   }
   function mine(LibInterface.S storage s, address who, uint256 amount, uint256 ethAmount)
-  public constant onlyBy(s.root, s.root) returns(bool) {
+  public onlyBy(s.root, s.root) returns(bool) {
     //if(ethAmount > 0) {
       s.balances[who] = SafeMath.add(s.balances[who], amount);
       return true;
@@ -27,7 +27,7 @@ library SnekCoin0_0_1 {
   }
 
   function changePrice(LibInterface.S storage s, uint256 amount)
-  public constant onlyBy(s.owner, s.owner) returns(bool){
+  public onlyBy(s.owner, s.owner) returns(bool){
       s.weiPriceToMine = amount;
   }
 
@@ -41,27 +41,20 @@ library SnekCoin0_0_1 {
   // allowance - Check the allowance that one address has for another
   // transferFrom - Spend the allowance that one address has for another */
 
-  function totalSupply(LibInterface.S storage s)
-  public constant returns (uint) {
+  function totalSupply(LibInterface.S storage s) public view returns(uint256) {
     return s.totalSupp;
   }
 
-  // https://github.com/ethereum/EIPs/issues/223
-  // If the _to address is a contract, these tokens will get transfered to the
-  // contract and will be irretrievable. Consider implementing ERC223 to
-  // accomodate this issue.
-  //
-  // A contract which is aware of RewardCoin/ERC20 should interact with the
-  // contract through the approve/transferFrom methods.
-  //
-  // ERC223 is a cool idea, but it's only useful for ERC223-to-ERC223 transfers.
-  // We should definitely safeguards to transfer() so that transfer to contracts
-  // is not allowed. Even though some contract may be able to handle the tokens,
-  // the approve/transferFrom technique makes that more certain.
-  // Another option would be to simple claim any token sent to a contract via
-  // transfer(), but this could operational overhead when angry users want to
-  // reclaim their tokens. On the upside, free tokens in the case where the user
-  // doesn't complain.
+  function balanceOf(LibInterface.S storage s, address _owner)
+  public view returns(uint256) {
+    return s.balances[_owner];
+  }
+
+  function allowance(LibInterface.S storage s, address _owner, address _spender)
+  public view returns(uint256) {
+    return s.allowed[_owner][_spender];
+  }
+
   function transfer(LibInterface.S storage s, address _to, uint256 _value, address sender)
   public returns(bool) {
     // Address(0) is 0x0. It is the burn address for ETH.
@@ -74,13 +67,8 @@ library SnekCoin0_0_1 {
     return true;
   }
 
-  function balanceOf(LibInterface.S storage s, address _owner)
-  public view returns (uint256 balance) {
-    return s.balances[_owner];
-  }
-
   function transferFrom(LibInterface.S storage s, address _from, address _to, uint256 _value, address sender)
-  public returns (bool) {
+  public returns(bool) {
     require(_to != address(0));
     require(_value <= s.balances[_from]);
     require(_value <= s.allowed[_from][sender]);
@@ -102,16 +90,12 @@ library SnekCoin0_0_1 {
   // can then call a function in the contract(e.g. buyWithRewardCoin) that will
   // will then call transferFrom.
   function approve(LibInterface.S storage s, address _spender, uint256 _value, address sender)
-  public returns (bool) {
+  public returns(bool) {
     s.allowed[sender][_spender] = _value;
     //emit Approval(msg.sender, _spender, _value);
     return true;
   }
 
-  function allowance(LibInterface.S storage s, address _owner, address _spender)
-  public view returns (uint256) {
-    return s.allowed[_owner][_spender];
-  }
 
   // Allows incremental changes to allowed[]
   function increaseApproval(LibInterface.S storage s, address _spender, uint _addedValue)

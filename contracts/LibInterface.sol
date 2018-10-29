@@ -40,9 +40,9 @@ library LibInterface {
 
 
   // ****** BEGIN ERC20 ******
-  function totalSupply(S storage s) public constant returns (uint256);
-  function balanceOf(S storage s, address tokenOwner) public constant returns (uint256);
-  function allowance(S storage s, address tokenOwner, address spender) public constant returns (uint256);
+  function totalSupply(S storage s) public constant returns(uint256);
+  function balanceOf(S storage s, address tokenOwner) public view returns(uint256);
+  function allowance(S storage s, address tokenOwner, address spender) public view returns (uint256);
   function transfer(S storage s, address to, uint256 tokens, address sender) public returns (bool);
   function approve(S storage s, address spender, uint256 tokens, address sender) public returns (bool);
   function transferFrom(S storage s, address from, address to, uint256 tokens, address sender) public returns (bool);

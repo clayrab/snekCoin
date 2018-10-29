@@ -129,9 +129,20 @@ contract('TestProxyLibrary', (accounts) => {
       totalSupply = await snekcointoken.totalSupply.call();
       assert.equal(1000000, totalSupply.toNumber(), "expected supply of 1000000");
     });
+
+    it("snekcoin root should be SnekCoin", async function() {
+      var root = await snekcointoken.getRoot.call();
+      assert.equal(snekcointoken.address, root, "expected adddress of root to be snekcoin");
+    });
     it("snekcoin should have total supply 1000000", async function() {
       var totalSupply = await snekcointoken.totalSupply.call();
       assert.equal(1000000, totalSupply.toNumber(), "expected supply of 1000000");
+    });
+    it("snekcoin owner should have total supply", async function() {
+      var totalSupply = await snekcointoken.totalSupply.call();
+      var ownerBalance = await snekcointoken.balanceOf(owner);
+      assert.equal(ownerBalance.toNumber(), totalSupply.toNumber(), "expected owner to have supply");
+
     });
 
     it("snekcoin can be transferred", async function() {
@@ -139,6 +150,7 @@ contract('TestProxyLibrary', (accounts) => {
       var user1Balance = await snekcointoken.balanceOf(user1);
       await snekcointoken.transfer(user1, 10, {from: owner});
       var newOwnerBalance = await snekcointoken.balanceOf(owner);
+      //console.log(out.toNumber());
       var newUser1Balance = await snekcointoken.balanceOf(user1);
       assert.equal(newOwnerBalance.toNumber(), ownerBalance.toNumber() - 10, "");
       assert.equal(newUser1Balance.toNumber(), user1Balance.toNumber() + 10, "");
@@ -156,10 +168,6 @@ contract('TestProxyLibrary', (accounts) => {
       assert.equal(newOwnerBalance.toNumber(), ownerBalance.toNumber() - 1, "");
       assert.equal(newUser2Balance.toNumber(), user2Balance.toNumber() + 1, "");
     });
-    // it("snekcoin root should be SnekCoin", async function() {
-    //   var root = await snekcoin.getRoot.call();
-    //   assert.equal(snekcoin.address, root, "expected adddress of root to be snekcoin");
-    // });
     it("snekcoin can receive and send eth", async function() {
       // can receive
       var startEth = await snekcointoken.getBalance.call();

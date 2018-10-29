@@ -39,34 +39,28 @@ contract SnekCoinStripper is Ownable {
     return s.mine(who, amount, ethAmount);
   }
   function changePrice(uint256 amount)
-  public onlyBy(s.root, s.root) returns(bool){
+  public returns(bool){
     return s.changePrice(amount);
   }
   // ****** END CONTRACT BUSINESS FUNCTIONS ******
 
   // ****** BEGIN ERC20 ******
-  function totalSupply()
-  public constant onlyBy(s.root, s.root) returns(uint256){
+  function totalSupply() public view returns(uint256){
     return s.totalSupply();
   }
-  function balanceOf(address tokenOwner)
-  public constant onlyBy(s.root, s.root) returns(uint256){
+  function balanceOf(address tokenOwner) public view returns(uint256){
     return s.balanceOf(tokenOwner);
   }
-  function allowance(address tokenOwner, address spender)
-  public constant onlyBy(s.root, s.root) returns(uint256){
+  function allowance(address tokenOwner, address spender) public view returns(uint256){
     return s.allowance(tokenOwner, spender);
   }
-  function transfer(address to, uint tokens, address sender)
-  public constant onlyBy(s.root, s.root) returns(bool){
+  function transfer(address to, uint tokens, address sender) public returns(bool){
     return s.transfer(to, tokens, sender);
   }
-  function approve(address spender, uint tokens, address sender)
-  public constant onlyBy(s.root, s.root) returns(bool){
+  function approve(address spender, uint tokens, address sender) public returns(bool){
     return s.approve(spender, tokens, sender);
   }
-  function transferFrom(address from, address to, uint tokens, address sender)
-  public constant onlyBy(s.root, s.root) returns(bool){
+  function transferFrom(address from, address to, uint tokens, address sender) public returns(bool){
     return s.transferFrom(from, to, tokens, sender);
   }
   // ****** END ERC20 ******
