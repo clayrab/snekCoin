@@ -28,12 +28,12 @@ library LibInterface {
     _;
   }
   // ****** BEGIN BASIC FUNCTIONS ******
-  function setRoot(S storage s, address root) public returns(bool);
-  function getRoot(S storage s) public view returns(address);
+  /* function setRoot(S storage s, address root) public returns(bool);
+  function getRoot(S storage s) public view returns(address); */
   // ****** END BASIC FUNCTIONS ******
 
   // ****** BEGIN CONTRACT BUSINESS FUNCTIONS ******
-
+  function getSender(S storage s) public constant returns(address);
   function mine(S storage s, address who, uint256 amount, uint256 ethAmount) public constant returns(bool);
   function changePrice(S storage s, uint256 amount) public constant returns(bool);
   // ****** END CONTRACT BUSINESS FUNCTIONS ******

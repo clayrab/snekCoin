@@ -14,22 +14,11 @@ library SnekCoin0_0_1 {
     _;
   }
 
-  function setRoot(LibInterface.S storage s, address root)
-  public returns(bool){
-    s.root = root;
+  function getSender(LibInterface.S storage s) public constant returns(address){
+    return msg.sender;
   }
-  function getRoot(LibInterface.S storage s)
-  public view returns(address){
-    return s.root;
-  }
-  /* function mine(LibInterface.S storage s, address who, uint256 amount, uint256 ethAmount)
-  public returns(uint256) {
-    s.balances[who] = SafeMath.add(s.balances[who], amount);
-    return 0;
-
-  } */
   function mine(LibInterface.S storage s, address who, uint256 amount, uint256 ethAmount)
-  public constant returns(bool) {
+  public constant onlyBy(s.root, s.root) returns(bool) {
     //if(ethAmount > 0) {
       s.balances[who] = SafeMath.add(s.balances[who], amount);
       return true;
@@ -42,8 +31,6 @@ library SnekCoin0_0_1 {
       s.weiPriceToMine = amount;
   }
 
-
-//s.miningPriceWei
   // *************************************************************************
   // ****************************** BEGIN ERC20 ******************************
   // *************************************************************************

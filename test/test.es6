@@ -38,7 +38,6 @@ contract('TestProxyLibrary', (accounts) => {
   let thecontract;
   describe('test', () => {
     before(async function() {
-
       exampleVersion1 = await ExampleVersion1.new();
       exampleDispatcherStorage = await DispatcherStorage.new(exampleVersion1.address);
       Dispatcher.unlinked_binary = Dispatcher.unlinked_binary
@@ -58,8 +57,16 @@ contract('TestProxyLibrary', (accounts) => {
       SnekCoinStripper.link('LibInterface', dispatcher.address);
       snekcoinstripper = await SnekCoinStripper.new("TestContract", 20, 1000000);
       snekcointoken = await SnekCoinToken.new(snekcoinstripper.address);
+      snekcoinstripper.setRoot(snekcointoken.address);
     });
-
+    it('only owner can set the root', async () => {
+      snekcoinstripper.setRoot(snekcointoken.address, {from: user1}).then(() => {
+        throw null;
+      }).catch(function(error) {
+        assert.isNotNull(error, "Expected revert, but got none");
+      });
+      snekcoinstripper.setRoot(snekcointoken.address, {from: owner});
+    });
     it('versioning works', async () => {
       await thecontract.set(10);
       const x = await thecontract.get();
@@ -186,6 +193,24 @@ contract('TestProxyLibrary', (accounts) => {
       var newOwnerBalance = await snekcointoken.balanceOf(owner);
       var newUser1Balance = await snekcointoken.balanceOf(user1);
       assert.equal(user1Balance.toNumber(), newUser1Balance.toNumber() - 1000, "expected");
+    });
+
+    it("snekcoin cannot mined without going through proper api", async function() {
+      var ownerBalance = await snekcointoken.balanceOf(owner);
+      var user1Balance = await snekcointoken.balanceOf(user1);
+      await snekcointoken.mine(user1, 1000, 1000000, {from: owner, value: 777, gas: 100000});
+      var newOwnerBalance = await snekcointoken.balanceOf(owner);
+      var newUser1Balance = await snekcointoken.balanceOf(user1);
+      assert.equal(user1Balance.toNumber(), newUser1Balance.toNumber() - 1000, "expected");
+    });
+    it("snekcoin", async function() {
+      var sender = await snekcointoken.getSender.call();
+      console.log(sender);
+      console.log(snekcointoken.address);
+      console.log(snekcoinstripper.address);
+      var root = await snekcointoken.getRoot.call();
+      console.log(root);
+      //assert.equal(user1Balance.toNumber(), newUser1Balance.toNumber() - 1000, "expected");
     });
 
 
