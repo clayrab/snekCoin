@@ -5,7 +5,7 @@ import "./lib/Ownable.sol";
 //import "./PayableLib.sol";
 
 // Just strips msg.value so lib can be called.
-contract SnekCoinStripper is Ownable {
+contract SnekCoinBack is Ownable {
   LibInterface.S public s;
   using LibInterface for LibInterface.S;
   //using snekCurrentVersion for address;
@@ -17,6 +17,13 @@ contract SnekCoinStripper is Ownable {
     s.root = address(this);
     s.weiPriceToMine = 1000000000000; // 0.000001 ETH
   }
+
+  // ****** BEGIN TEST FUNCTIONS ******
+  function getSender()
+  public constant returns(address){
+    return msg.sender;
+  }
+  // ****** END TEST FUNCTIONS ******
 
   // ****** BEGIN BASIC FUNCTIONS ******
   function setRoot(address root)
@@ -30,17 +37,39 @@ contract SnekCoinStripper is Ownable {
   // ****** END BASIC FUNCTIONS ******
 
   // ****** BEGIN CONTRACT BUSINESS FUNCTIONS ******
-  function getSender()
-  public constant returns(address){
-    return msg.sender;
-  }
-  function mine(address who, uint256 amount, uint256 ethAmount)
+
+  function mine(uint256 amount, address sender, uint256 value)
   public onlyBy(s.root, s.root) returns(bool) {
-    return s.mine(who, amount, ethAmount);
+    return s.mine(amount, sender, value);
   }
-  function changePrice(uint256 amount)
+  function approveMine(address who, uint256 amount)
+  public onlyBy(s.root, s.root) returns(bool) {
+    return s.approveMine(who, amount);
+  }
+  function isMineApproved(address who)
+  public view returns(uint256) {
+    return s.isMineApproved(who);
+  }
+
+  function requestMineWithSnek(address who, uint256 amount, address sender)
+  public payable returns(bool) {
+
+  }
+  function mineWithSnek(address who, uint256 amount, uint256 ethAmount)
+  public onlyBy(owner, owner) returns(bool) {
+
+  }
+  function changeMiningPrice(uint256 amount)
   public returns(bool){
-    return s.changePrice(amount);
+    return s.changeMiningPrice(amount);
+  }
+  function getMiningPrice()
+  public view returns(uint256){
+    return s.getMiningPrice();
+  }
+  function changeSnekMiningPrice(uint256 amount)
+  public returns(bool){
+
   }
   // ****** END CONTRACT BUSINESS FUNCTIONS ******
 

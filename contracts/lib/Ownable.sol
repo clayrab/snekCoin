@@ -9,4 +9,8 @@ contract Ownable {
     _;
   }
   address public owner = msg.sender;
+  function changeOwner(address newOwner)
+  public onlyBy(owner, owner) {
+    owner = newOwner;
+  }
 }

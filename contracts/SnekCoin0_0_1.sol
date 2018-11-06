@@ -17,19 +17,35 @@ library SnekCoin0_0_1 {
   function getSender(LibInterface.S storage s) public view returns(address){
     return msg.sender;
   }
-  function mine(LibInterface.S storage s, address who, uint256 amount, uint256 ethAmount)
-  public onlyBy(s.root, s.root) returns(bool) {
-    //if(ethAmount > 0) {
-      s.balances[who] = SafeMath.add(s.balances[who], amount);
-      return true;
-    /* }
-    return false; */
+
+  function mine(LibInterface.S storage s, uint256 amount, address sender, uint256 value)
+  public onlyBy(s.root, s.root) returns(bool){
+    require(value >= s.weiPriceToMine, "Not enough ethereum");
+    require(s.approvedMines[sender] >= amount);
+    s.balances[sender] = SafeMath.add(s.balances[sender], amount);
+    s.approvedMines[sender] = SafeMath.sub(s.approvedMines[sender], amount);
+    s.totalSupp = SafeMath.add(s.totalSupp, amount);
+  }
+  function approveMine(LibInterface.S storage s, address who, uint256 amount)
+  public onlyBy(s.root, s.root) returns(bool){
+    s.approvedMines[who] = amount;
+    return true;
+  }
+  function isMineApproved(LibInterface.S storage s, address who)
+  public view onlyBy(s.root, s.root) returns(uint256){
+    return s.approvedMines[who];
   }
 
-  function changePrice(LibInterface.S storage s, uint256 amount)
-  public onlyBy(s.owner, s.owner) returns(bool){
+  function changeMiningPrice(LibInterface.S storage s, uint256 amount)
+  public onlyBy(s.root, s.root) returns(bool){
       s.weiPriceToMine = amount;
   }
+
+  function getMiningPrice(LibInterface.S storage s)
+  public view onlyBy(s.root, s.root) returns(uint256){
+    return s.weiPriceToMine;
+  }
+
 
   // *************************************************************************
   // ****************************** BEGIN ERC20 ******************************
@@ -99,14 +115,14 @@ library SnekCoin0_0_1 {
 
   // Allows incremental changes to allowed[]
   function increaseApproval(LibInterface.S storage s, address _spender, uint _addedValue)
-  public returns (bool) {
+  public returns(bool) {
     s.allowed[msg.sender][_spender] = SafeMath.add(s.allowed[msg.sender][_spender], _addedValue);
     //emit Approval(msg.sender, _spender, s.allowed[msg.sender][_spender]);
     return true;
   }
 
   function decreaseApproval(LibInterface.S storage s, address _spender, uint _subtractedValue)
-  public returns (bool) {
+  public returns(bool) {
     uint oldValue = s.allowed[msg.sender][_spender];
     if (_subtractedValue > oldValue) {
       s.allowed[msg.sender][_spender] = 0;

@@ -17,9 +17,19 @@ library LibInterface {
     address root; //real contract which must be used for payable functions
     mapping (address => uint256) balances;
     mapping (address => mapping (address => uint256)) allowed;
+    mapping (address => uint256) approvedMines;
     // ****** END ERC20 ******
   }
-
+  event RequestMine(
+    address who,
+    uint256 amount,
+    uint256 ethAmount
+  );
+  event RequestMineWithSnek(
+    address who,
+    uint256 amount,
+    uint256 ethAmount
+  );
   modifier onlyBy(address account1, address account2) {
     require(
       msg.sender == account1 || msg.sender == account2 ,
@@ -27,15 +37,22 @@ library LibInterface {
     );
     _;
   }
+  // ****** BEGIN TEST FUNCTIONS ******
+  function getSender(S storage s) public constant returns(address);
+  // ****** END TEST FUNCTIONS ******
+
   // ****** BEGIN BASIC FUNCTIONS ******
   /* function setRoot(S storage s, address root) public returns(bool);
   function getRoot(S storage s) public view returns(address); */
   // ****** END BASIC FUNCTIONS ******
 
   // ****** BEGIN CONTRACT BUSINESS FUNCTIONS ******
-  function getSender(S storage s) public constant returns(address);
-  function mine(S storage s, address who, uint256 amount, uint256 ethAmount) public constant returns(bool);
-  function changePrice(S storage s, uint256 amount) public constant returns(bool);
+
+  function mine(S storage s, uint256 amount, address sender, uint256 value) public returns(bool);
+  function approveMine(S storage s, address who, uint256 amount) public returns(bool);
+  function isMineApproved(S storage s, address who) public view returns(uint256);
+  function changeMiningPrice(S storage s, uint256 amount) public returns(bool);
+  function getMiningPrice(S storage s) public view returns(uint256);
   // ****** END CONTRACT BUSINESS FUNCTIONS ******
 
 

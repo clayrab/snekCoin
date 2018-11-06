@@ -2,9 +2,8 @@
 
 const Dispatcher = artifacts.require('Dispatcher.sol');
 const DispatcherStorage = artifacts.require('DispatcherStorage.sol');
-const SnekCoinStripper = artifacts.require('SnekCoinStripper.sol');
+const SnekCoinBack = artifacts.require('SnekCoinBack.sol');
 const SnekCoinToken = artifacts.require('SnekCoinToken.sol');
-const PayableLib = artifacts.require('PayableLib.sol');
 const SnekCoin0_0_1 = artifacts.require('SnekCoin0_0_1.sol');
 const SnekCoin0_0_X = artifacts.require('./SnekCoin0_0_X.sol');
 
@@ -27,8 +26,9 @@ contract('TestProxyLibrary', (accounts) => {
   let snek00x;
   let dispatcherStorage;
   let dispatcher;
-  let snekcoinstripper;
+  let snekcoinback;
   let snekcointoken;
+  let fakesnekcointoken;
 
   let exampleVersion1;
   let exampleVersion2;
@@ -38,6 +38,7 @@ contract('TestProxyLibrary', (accounts) => {
   let thecontract;
   describe('test', () => {
     before(async function() {
+
       exampleVersion1 = await ExampleVersion1.new();
       exampleDispatcherStorage = await DispatcherStorage.new(exampleVersion1.address);
       Dispatcher.unlinked_binary = Dispatcher.unlinked_binary
@@ -54,20 +55,33 @@ contract('TestProxyLibrary', (accounts) => {
           .replace(exampleDispatcherStorage.address.slice(2),
               dispatcherStorage.address.slice(2));
       dispatcher = await Dispatcher.new();
-      SnekCoinStripper.link('LibInterface', dispatcher.address);
-      snekcoinstripper = await SnekCoinStripper.new("TestContract", 20, 1000000);
-      snekcointoken = await SnekCoinToken.new(snekcoinstripper.address);
-      snekcoinstripper.setRoot(snekcointoken.address);
+      SnekCoinBack.link('LibInterface', dispatcher.address);
+      snekcoinback = await SnekCoinBack.new("TestContract", 20, 1000000);
+      snekcointoken = await SnekCoinToken.new(snekcoinback.address);
+      snekcoinback.setRoot(snekcointoken.address);
+      fakesnekcointoken = await SnekCoinToken.new(snekcoinback.address);
+
     });
     it('only owner can set the root', async () => {
-      snekcoinstripper.setRoot(snekcointoken.address, {from: user1}).then(() => {
+      snekcoinback.setRoot(snekcointoken.address, {from: user1}).then(() => {
         throw null;
       }).catch(function(error) {
         assert.isNotNull(error, "Expected revert, but got none");
       });
-      snekcoinstripper.setRoot(snekcointoken.address, {from: owner});
+      snekcoinback.setRoot(snekcointoken.address, {from: owner});
     });
-    it('versioning works', async () => {
+    it('snekcointoken can do owner things', async () => {
+      var _owner = await snekcointoken.owner.call();
+      assert.equal(_owner, owner, "expected owner to be accounts[0]");
+      await snekcointoken.changeOwner(user1);
+      var newOwner = await snekcointoken.owner.call();
+      assert.equal(newOwner, user1, "expected owner to be accounts[1]");
+      await snekcointoken.changeOwner(owner, {from: user1});
+      var finalOwner = await snekcointoken.owner.call();
+      assert.equal(finalOwner, owner, "expected owner to be accounts[1]");
+
+    });
+    it('versioning', async () => {
       await thecontract.set(10);
       const x = await thecontract.get();
       assert.equal(x.toNumber(), 10);
@@ -82,31 +96,6 @@ contract('TestProxyLibrary', (accounts) => {
         throw null;
       }).catch(function(error) {
         assert.isNotNull(error, "Expected revert, but got none");
-      });
-    });
-    it('measure gas costs', (done) => {
-      done();
-    });
-
-    context('only owner can call', () => {
-      let example, example2, dispatcherStorage, subject
-      beforeEach(async () => {
-        example = await ExampleVersion1.new();
-        example2 = await ExampleVersion2.new();
-        exampleDispatcherStorage = await DispatcherStorage.new(example.address, {from: accounts[0]});
-        subject = (account) => exampleDispatcherStorage.replace(example2.address, {from: account});
-      })
-
-      it('fail', async () => {
-        subject(accounts[1]).then(() => {
-          throw null;
-        }).catch(function(error) {
-          assert.isNotNull(error, "Expected revert, but got none");
-        });
-      });
-      it('success', async () => {
-        const result = await subject(accounts[0])
-        assert.isOk(result)
       });
     });
 
@@ -142,7 +131,6 @@ contract('TestProxyLibrary', (accounts) => {
       var totalSupply = await snekcointoken.totalSupply.call();
       var ownerBalance = await snekcointoken.balanceOf(owner);
       assert.equal(ownerBalance.toNumber(), totalSupply.toNumber(), "expected owner to have supply");
-
     });
 
     it("snekcoin can be transferred", async function() {
@@ -185,43 +173,100 @@ contract('TestProxyLibrary', (accounts) => {
       snekcointoken.withdraw(web3.toWei(0.000001, "ether"), {from: user1}).then(() => {
         throw null;
       }).catch(function(error) {
-        assert.isNotNull(error, "Expected revert, but got none");
+        assert.isNotNull(error, "withdraw expected revert, but got none");
       });
       // owner cannot draw more than is available
-      snekcointoken.withdraw(web3.toWei(0.001, "ether"), {from: owner}).then(() => {
+      // snekcointoken.withdraw(web3.toWei(0.001, "ether"), {from: owner}).then(() => {
+      //   throw null;
+      // }).catch(function(error) {
+      //   assert.isNotNull(error, "withdrawal expected revert, but got none");
+      // });
+    });
+
+    it("snekcoin can be mined", async function() {
+      var ownerBalance = await snekcointoken.balanceOf(owner);
+      var user1Balance = await snekcointoken.balanceOf(user1);
+      // price can be changed
+      await snekcointoken.changeMiningPrice(1000000, {from: owner});
+      var miningPrice = await snekcointoken.getMiningPrice();
+      assert.equal(miningPrice.toNumber(), 1000000, "expected 1000");
+      // mining must be pre-approved by owner
+      await snekcointoken.mine(1000, {from: user1, value: 1000000}).then(() => {
+        throw null;
+      }).catch(function(error) {
+        assert.isNotNull(error, "Expected unapproved revert");
+      });
+      // approving...
+      await snekcointoken.approveMine(user1, 1000, {from: owner});
+      var approvedAmount = await snekcointoken.isMineApproved(user1, {from: user1});
+      assert.equal(approvedAmount.toNumber(), 1000, "expected 1000");
+      // sending less than the price will yield nothing
+      await snekcointoken.mine(1000, {from: user1, value: 10}).then(() => {
+        throw null;
+      }).catch(function(error) {
+        assert.isNotNull(error, "Expected revert, but got none");
+      });
+      var newUser1Balance = await snekcointoken.balanceOf(user1);
+      assert.equal(user1Balance.toNumber(), newUser1Balance.toNumber(), "expected no change");
+      // Sending enough wei succeeds
+      await snekcointoken.mine(1000, {from: user1, value: 1000000});
+      newUser1Balance = await snekcointoken.balanceOf(user1);
+      assert.equal(user1Balance.toNumber() + 1000, newUser1Balance.toNumber(), "expected 1000 more");
+      // No more approval left
+      await snekcointoken.mine(1, {from: user1, value: 1000000}).then(() => {
+        throw null;
+      }).catch(function(error) {
+        assert.isNotNull(error, "Expected revert, but got none!!");
+      });
+      var newNewUser1Balance = await snekcointoken.balanceOf(user1);
+      assert.equal(newNewUser1Balance.toNumber(), newUser1Balance.toNumber(), "expected no change");
+    });
+
+    it("snekcoin cannot be mined without going through proper api", async function() {
+      await fakesnekcointoken.mine.sendTransaction(user1, 1000, 1000000).then(() => {
+        throw null;
+      }).catch(function(error) {
+        assert.isNotNull(error, "Expected revert, but got none");
+      });
+      await fakesnekcointoken.mine(user1, 1000, 1000000, {from: owner, value: 777, gas: 100000}).then(() => {
         throw null;
       }).catch(function(error) {
         assert.isNotNull(error, "Expected revert, but got none");
       });
     });
-    it("snekcoin can be mined", async function() {
-      var ownerBalance = await snekcointoken.balanceOf(owner);
-      var user1Balance = await snekcointoken.balanceOf(user1);
-      await snekcointoken.mine(user1, 1000, 1000000, {from: owner, value: 777, gas: 100000});
-      var newOwnerBalance = await snekcointoken.balanceOf(owner);
-      var newUser1Balance = await snekcointoken.balanceOf(user1);
-      assert.equal(user1Balance.toNumber(), newUser1Balance.toNumber() - 1000, "expected");
-    });
 
-    it("snekcoin cannot mined without going through proper api", async function() {
-      var ownerBalance = await snekcointoken.balanceOf(owner);
-      var user1Balance = await snekcointoken.balanceOf(user1);
-      await snekcointoken.mine(user1, 1000, 1000000, {from: owner, value: 777, gas: 100000});
-      var newOwnerBalance = await snekcointoken.balanceOf(owner);
-      var newUser1Balance = await snekcointoken.balanceOf(user1);
-      assert.equal(user1Balance.toNumber(), newUser1Balance.toNumber() - 1000, "expected");
-    });
-    it("snekcoin", async function() {
+    it("test sender", async function() {
       var sender = await snekcointoken.getSender.call();
+      var root = await snekcointoken.getRoot.call();
+      console.log("***** START SENDER INFO *****");
       console.log(sender);
       console.log(snekcointoken.address);
-      console.log(snekcoinstripper.address);
-      var root = await snekcointoken.getRoot.call();
+      console.log(snekcoinback.address);
       console.log(root);
-      //assert.equal(user1Balance.toNumber(), newUser1Balance.toNumber() - 1000, "expected");
+      console.log("***** END SENDER INFO *****");
     });
-
-
-
+    it('measure gas costs', async () => {
+      //https://ethgasstation.info/ 5.1Gwei
+      // var gasPriceWei = 5100000000;
+      // var dollarsPerEth = 250;
+      // var weiPerEth = 1000000000000000000;
+      // var gas = await snekcointoken.totalSupply.estimateGas({from: owner});
+      // console.log("************** GAS ESTIMATES ************** ");
+      // console.log("totalSupply esti: " + gas);
+      // var ownerBalance = await snekcointoken.balanceOf(owner);
+      // await snekcointoken.totalSupply.call({from: owner});
+      // var newOwnerBalance = await snekcointoken.balanceOf(owner);
+      // console.log("totalSupply real: " + (ownerBalance - newOwnerBalance));
+      // console.log("totalSupply price: " + gas*gasPriceWei*dollarsPerEth/weiPerEth);
+      // gas = await snekcointoken.mine.estimateGas(user1, 1000, 1000000, {from: owner, value: 777, gas: 100000});
+      // console.log("mine esti: " + gas);
+      // var ownerBalance = await snekcointoken.balanceOf(owner);
+      // await snekcointoken.mine.call(user1, 1000, 1000000, {from: owner, value: 777, gas: 100000});
+      // var newOwnerBalance = await snekcointoken.balanceOf(owner);
+      // console.log("mine real: " + (ownerBalance - newOwnerBalance));
+      // console.log("mine price: " + gas*gasPriceWei*dollarsPerEth/weiPerEth);
+      // await snekcointoken.mine(user1, 1000, 1000000, {from: owner, value: 777, gas: 100000});
+      // console.log("************** GAS ESTIMATES ************** ");
+    });
   });
 });

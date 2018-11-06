@@ -2,22 +2,75 @@ pragma solidity ^0.4.10;
 
 import "./LibInterface.sol";
 import "./lib/Ownable.sol";
-import "./SnekCoinStripper.sol";
+import "./SnekCoinBack.sol";
 
 contract SnekCoinToken is Ownable {
-  SnekCoinStripper stripper;
+  SnekCoinBack back;
   constructor(address addr) public {
-    stripper = SnekCoinStripper(addr);
+    back = SnekCoinBack(addr);
   }
+
+  // ****** BEGIN TEST FUNCTIONS ******
+  function getSender()
+  public constant returns(address){
+    return back.getSender();
+  }
+  // ****** END TEST FUNCTIONS ******
+
+  // ****** BEGIN BASIC FUNCTIONS ******
+  function setRoot(address root)
+  public onlyBy(owner, owner) returns(bool){
+    return back.setRoot(root);
+  }
+  function getRoot()
+  public view returns(address){
+    return back.getRoot();
+  }
+  // ****** END BASIC FUNCTIONS ******
+
+  // ****** BEGIN CONTRACT BUSINESS FUNCTIONS ******
+  function mine(uint256 amount)
+  public payable returns(bool) {
+    return back.mine(amount, msg.sender, msg.value);
+  }
+  function approveMine(address who, uint256 amount)
+  public onlyBy(owner, owner) returns(bool) {
+    //if(msg.value > )
+    //return true;
+    return back.approveMine(who, amount);
+  }
+  function isMineApproved(address who)
+  public view returns(uint256) {
+    return back.isMineApproved(who);
+  }
+
+  function mineWithSnek(address who, uint256 amount, uint256 ethAmount)
+  public onlyBy(owner, owner) returns(bool) {
+
+  }
+  function changeMiningPrice(uint256 amount)
+  public returns(bool){
+    return back.changeMiningPrice(amount);
+  }
+  function getMiningPrice()
+  public view returns(uint256){
+    return back.getMiningPrice();
+  }
+  function changeSnekMiningPrice(uint256 amount)
+  public returns(bool){
+
+  }
+  // ****** END CONTRACT BUSINESS FUNCTIONS ******
+
   // ****** BEGIN PAYABLE FUNCTIONS ******
   function() public payable {
     // accept random incoming payment
   }
   function withdraw(uint256 amountWei)
   onlyBy(owner, owner) public{
-    //if(address(this).balance > amountWei) {
+    if(address(this).balance > amountWei) {
       msg.sender.transfer(amountWei);
-    //}
+    }
   }
   function getBalance()
   public view returns (uint256) {
@@ -25,50 +78,24 @@ contract SnekCoinToken is Ownable {
   }
   // ****** END PAYABLE FUNCTIONS ******
 
-  // ****** BEGIN BASIC FUNCTIONS ******
-  function setRoot(address root)
-  public returns(bool){
-    return stripper.setRoot(root);
-  }
-  function getRoot()
-  public view returns(address){
-    return stripper.getRoot();
-  }
-  // ****** END BASIC FUNCTIONS ******
-
-  // ****** BEGIN CONTRACT BUSINESS FUNCTIONS ******
-  function getSender()
-  public constant returns(address){
-    return stripper.getSender();
-  }
-  function mine(address who, uint256 amount, uint256 ethAmount)
-  public payable returns(bool) {
-    return stripper.mine(who, amount, ethAmount);
-  }
-  function changePrice(uint256 amount)
-  public returns(bool){
-    return stripper.changePrice(amount);
-  }
-  // ****** END CONTRACT BUSINESS FUNCTIONS ******
-
   // ****** BEGIN ERC20 ******
   function totalSupply() public view returns(uint256){
-    return stripper.totalSupply();
+    return back.totalSupply();
   }
   function balanceOf(address tokenOwner) public view returns(uint256){
-    return stripper.balanceOf(tokenOwner);
+    return back.balanceOf(tokenOwner);
   }
   function allowance(address tokenOwner, address spender) public view returns(uint256){
-    return stripper.allowance(tokenOwner, spender);
+    return back.allowance(tokenOwner, spender);
   }
   function transfer(address to, uint tokens) public returns(bool){
-    return stripper.transfer(to, tokens, msg.sender);
+    return back.transfer(to, tokens, msg.sender);
   }
   function approve(address spender, uint tokens) public returns(bool){
-    return stripper.approve(spender, tokens, msg.sender);
+    return back.approve(spender, tokens, msg.sender);
   }
   function transferFrom(address from, address to, uint tokens) public returns(bool){
-    return stripper.transferFrom(from, to, tokens, msg.sender);
+    return back.transferFrom(from, to, tokens, msg.sender);
   }
   // ****** END ERC20 ******
 }
