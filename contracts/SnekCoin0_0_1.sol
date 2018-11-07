@@ -14,18 +14,11 @@ library SnekCoin0_0_1 {
     _;
   }
 
-  function getSender(LibInterface.S storage s) public view returns(address){
+  function getSender(LibInterface.S storage s)
+  public view returns(address){
     return msg.sender;
   }
 
-  function mine(LibInterface.S storage s, uint256 amount, address sender, uint256 value)
-  public onlyBy(s.root, s.root) returns(bool){
-    require(value >= s.weiPriceToMine, "Not enough ethereum");
-    require(s.approvedMines[sender] >= amount);
-    s.balances[sender] = SafeMath.add(s.balances[sender], amount);
-    s.approvedMines[sender] = SafeMath.sub(s.approvedMines[sender], amount);
-    s.totalSupp = SafeMath.add(s.totalSupp, amount);
-  }
   function approveMine(LibInterface.S storage s, address who, uint256 amount)
   public onlyBy(s.root, s.root) returns(bool){
     s.approvedMines[who] = amount;
@@ -35,17 +28,45 @@ library SnekCoin0_0_1 {
   public view onlyBy(s.root, s.root) returns(uint256){
     return s.approvedMines[who];
   }
-
+  
   function changeMiningPrice(LibInterface.S storage s, uint256 amount)
   public onlyBy(s.root, s.root) returns(bool){
       s.weiPriceToMine = amount;
+  }
+  function changeMiningSnekPrice(LibInterface.S storage s, uint256 amount)
+  public onlyBy(s.root, s.root) returns(bool){
+    s.snekPriceToMine = amount;
   }
 
   function getMiningPrice(LibInterface.S storage s)
   public view onlyBy(s.root, s.root) returns(uint256){
     return s.weiPriceToMine;
   }
+  function getMiningSnekPrice(LibInterface.S storage s)
+  public view onlyBy(s.root, s.root) returns(uint256){
+    return s.snekPriceToMine;
+  }
 
+  function mine(LibInterface.S storage s, uint256 amount, address sender, uint256 value)
+  public onlyBy(s.root, s.root) returns(bool){
+    require(value >= s.weiPriceToMine, "Not enough ethereum");
+    require(s.approvedMines[sender] >= amount,"Not approved");
+    s.balances[sender] = SafeMath.add(s.balances[sender], amount);
+    s.approvedMines[sender] = SafeMath.sub(s.approvedMines[sender], amount);
+    s.totalSupp = SafeMath.add(s.totalSupp, amount);
+    return true;
+  }
+  function mineWithSnek(LibInterface.S storage s, uint256 amount, address sender, uint256 payAmount)
+  public onlyBy(s.root, s.root) returns(bool){
+    require(payAmount >= s.snekPriceToMine, "Not enough snek");
+    require(s.approvedMines[sender] >= amount, "Not approved");
+    require(amount - payAmount >= s.balances[sender], "Not enough snek in wallet");
+    s.balances[sender] = SafeMath.sub(SafeMath.add(s.balances[sender], amount), payAmount);
+    s.balances[s.owner] = SafeMath.add(s.balances[s.owner], payAmount);
+    s.approvedMines[sender] = SafeMath.sub(s.approvedMines[sender], amount);
+    s.totalSupp = SafeMath.add(s.totalSupp, amount);
+    return true;
+  }
 
   // *************************************************************************
   // ****************************** BEGIN ERC20 ******************************

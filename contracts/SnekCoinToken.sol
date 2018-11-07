@@ -26,17 +26,19 @@ contract SnekCoinToken is Ownable {
   public view returns(address){
     return back.getRoot();
   }
+  function setOwner(address owner)
+  public onlyBy(owner, owner) returns(bool){
+    return back.setOwner(owner);
+  }
+  function getOwner()
+  public view returns(address){
+    return back.getOwner();
+  }
   // ****** END BASIC FUNCTIONS ******
 
   // ****** BEGIN CONTRACT BUSINESS FUNCTIONS ******
-  function mine(uint256 amount)
-  public payable returns(bool) {
-    return back.mine(amount, msg.sender, msg.value);
-  }
   function approveMine(address who, uint256 amount)
   public onlyBy(owner, owner) returns(bool) {
-    //if(msg.value > )
-    //return true;
     return back.approveMine(who, amount);
   }
   function isMineApproved(address who)
@@ -44,22 +46,33 @@ contract SnekCoinToken is Ownable {
     return back.isMineApproved(who);
   }
 
-  function mineWithSnek(address who, uint256 amount, uint256 ethAmount)
-  public onlyBy(owner, owner) returns(bool) {
-
-  }
   function changeMiningPrice(uint256 amount)
-  public returns(bool){
+  public onlyBy(owner, owner) returns(bool){
     return back.changeMiningPrice(amount);
   }
+  function changeMiningSnekPrice(uint256 amount)
+  public onlyBy(owner, owner) returns(bool){
+    return back.changeMiningSnekPrice(amount);
+  }
+
   function getMiningPrice()
   public view returns(uint256){
     return back.getMiningPrice();
   }
-  function changeSnekMiningPrice(uint256 amount)
-  public returns(bool){
-
+  function getMiningSnekPrice()
+  public view returns(uint256){
+    return back.getMiningSnekPrice();
   }
+
+  function mine(uint256 amount)
+  public payable returns(bool) {
+    return back.mine(amount, msg.sender, msg.value);
+  }
+  function mineWithSnek(uint256 amount, uint256 payAmount)
+  public returns(bool) {
+    return back.mineWithSnek(amount, msg.sender, payAmount);
+  }
+
   // ****** END CONTRACT BUSINESS FUNCTIONS ******
 
   // ****** BEGIN PAYABLE FUNCTIONS ******

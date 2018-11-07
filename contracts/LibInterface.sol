@@ -8,28 +8,19 @@ library LibInterface {
   struct S {
     uint256 creationTime;
     uint256 weiPriceToMine;
+    uint256 snekPriceToMine;
     address owner;
+    address root; //real contract which must be used for payable functions
     address snekCurrentVersion;
+    mapping (address => uint256) approvedMines;
     // ****** BEGIN ERC20 ******
     uint256 totalSupp;
     bytes32 name;
     uint8 decimals;
-    address root; //real contract which must be used for payable functions
     mapping (address => uint256) balances;
     mapping (address => mapping (address => uint256)) allowed;
-    mapping (address => uint256) approvedMines;
     // ****** END ERC20 ******
   }
-  event RequestMine(
-    address who,
-    uint256 amount,
-    uint256 ethAmount
-  );
-  event RequestMineWithSnek(
-    address who,
-    uint256 amount,
-    uint256 ethAmount
-  );
   modifier onlyBy(address account1, address account2) {
     require(
       msg.sender == account1 || msg.sender == account2 ,
@@ -48,11 +39,14 @@ library LibInterface {
 
   // ****** BEGIN CONTRACT BUSINESS FUNCTIONS ******
 
-  function mine(S storage s, uint256 amount, address sender, uint256 value) public returns(bool);
   function approveMine(S storage s, address who, uint256 amount) public returns(bool);
   function isMineApproved(S storage s, address who) public view returns(uint256);
-  function changeMiningPrice(S storage s, uint256 amount) public returns(bool);
+  function changeMiningPrice(S storage s, uint256 amount)public returns(bool);
+  function changeMiningSnekPrice(S storage s, uint256 amount) public returns(bool);
   function getMiningPrice(S storage s) public view returns(uint256);
+  function getMiningSnekPrice(S storage s) public view returns(uint256);
+  function mine(S storage s, uint256 amount, address sender, uint256 value) public returns(bool);
+  function mineWithSnek(S storage s, uint256 amount, address sender, uint256 payAmount) public returns(bool);
   // ****** END CONTRACT BUSINESS FUNCTIONS ******
 
 

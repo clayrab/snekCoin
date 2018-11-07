@@ -14,6 +14,7 @@ contract SnekCoinBack is Ownable {
     s.decimals = dec;
     s.totalSupp = ts;
     s.balances[msg.sender] = ts;
+    s.owner = msg.sender;
     s.root = address(this);
     s.weiPriceToMine = 1000000000000; // 0.000001 ETH
   }
@@ -34,14 +35,17 @@ contract SnekCoinBack is Ownable {
   public view returns(address){
     return s.root;
   }
+  function setOwner(address newOwner)
+  public onlyBy(owner, s.root) returns(bool){
+    s.owner = newOwner;
+  }
+  function getOwner()
+  public view returns(address){
+    return s.owner;
+  }
   // ****** END BASIC FUNCTIONS ******
 
   // ****** BEGIN CONTRACT BUSINESS FUNCTIONS ******
-
-  function mine(uint256 amount, address sender, uint256 value)
-  public onlyBy(s.root, s.root) returns(bool) {
-    return s.mine(amount, sender, value);
-  }
   function approveMine(address who, uint256 amount)
   public onlyBy(s.root, s.root) returns(bool) {
     return s.approveMine(who, amount);
@@ -51,25 +55,32 @@ contract SnekCoinBack is Ownable {
     return s.isMineApproved(who);
   }
 
-  function requestMineWithSnek(address who, uint256 amount, address sender)
-  public payable returns(bool) {
-
-  }
-  function mineWithSnek(address who, uint256 amount, uint256 ethAmount)
-  public onlyBy(owner, owner) returns(bool) {
-
-  }
   function changeMiningPrice(uint256 amount)
-  public returns(bool){
+  public onlyBy(s.root, s.root) returns(bool){
     return s.changeMiningPrice(amount);
   }
+
+  function changeMiningSnekPrice(uint256 amount)
+  public onlyBy(s.root, s.root) returns(bool){
+    return s.changeMiningSnekPrice(amount);
+  }
+
   function getMiningPrice()
   public view returns(uint256){
     return s.getMiningPrice();
   }
-  function changeSnekMiningPrice(uint256 amount)
-  public returns(bool){
+  function getMiningSnekPrice()
+  public view returns(uint256){
+    return s.getMiningSnekPrice();
+  }
 
+  function mine(uint256 amount, address sender, uint256 value)
+  public onlyBy(s.root, s.root) returns(bool) {
+    return s.mine(amount, sender, value);
+  }
+  function mineWithSnek(uint256 amount, address sender, uint256 payAmount)
+  public onlyBy(s.root, s.root) returns(bool) {
+    return s.mineWithSnek(amount, sender, payAmount);
   }
   // ****** END CONTRACT BUSINESS FUNCTIONS ******
 
