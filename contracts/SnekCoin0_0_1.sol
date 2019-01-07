@@ -19,16 +19,6 @@ library SnekCoin0_0_1 {
     return msg.sender;
   }
 
-  function approveMine(LibInterface.S storage s, address who, uint256 amount)
-  public onlyBy(s.root, s.root) returns(bool){
-    s.approvedMines[who] = amount;
-    return true;
-  }
-  function isMineApproved(LibInterface.S storage s, address who)
-  public view onlyBy(s.root, s.root) returns(uint256){
-    return s.approvedMines[who];
-  }
-  
   function changeMiningPrice(LibInterface.S storage s, uint256 amount)
   public onlyBy(s.root, s.root) returns(bool){
       s.weiPriceToMine = amount;
@@ -47,27 +37,50 @@ library SnekCoin0_0_1 {
     return s.snekPriceToMine;
   }
 
-  function mine(LibInterface.S storage s, uint256 amount, address sender, uint256 value)
-  public onlyBy(s.root, s.root) returns(bool){
+  function mine(LibInterface.S storage s, bytes32 signedMessage, uint8 sigV, bytes32 sigR, bytes32 sigS, address sender, uint256 value)
+  public onlyBy(s.root, s.root) returns(uint256) {
+    // Data is 3 uints packed into bytes32 as hex: 1337beef + pubkey + allowance nonce + amount.
+    // pubkey = 20 bytes, nonce = 4 bytes, amount = 4 bytes.
+    // Total size = 224 bits = 160 + 32 + 32 bits = 28 bytes = 40hex pubkey, 8 hex nonce, 8 hex amount = (40*8*8)*4 hex chars
+    // Bytes32 also convenient for sha3/keccak256 to work across web3 + solidity.
+    uint256 rawData = uint256(signedMessage) & (2**224-1);
+    uint32 amount = uint32(rawData & (2**32-1));
+    rawData = rawData / (2**32);
+    uint32 nonce = uint32(rawData & (2**32-1));
+    rawData = rawData / (2**32);
+    address user = address(rawData);
     require(value >= s.weiPriceToMine, "Not enough ethereum");
-    require(s.approvedMines[sender] >= amount,"Not approved");
+    require(ecrecover(keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", signedMessage)), sigV, sigR, sigS) == s.owner, "Not approved by owner");
+    require(user == sender, "Not Approved User");
+    require(nonce == s.allowanceNonces[sender] , "Not Approved Nonce");
     s.balances[sender] = SafeMath.add(s.balances[sender], amount);
-    s.approvedMines[sender] = SafeMath.sub(s.approvedMines[sender], amount);
+    s.allowanceNonces[sender] = s.allowanceNonces[sender] + 1;
     s.totalSupp = SafeMath.add(s.totalSupp, amount);
-    return true;
+    return amount;
   }
-  function mineWithSnek(LibInterface.S storage s, uint256 amount, address sender, uint256 payAmount)
-  public onlyBy(s.root, s.root) returns(bool){
-    require(payAmount >= s.snekPriceToMine, "Not enough snek");
-    require(s.approvedMines[sender] >= amount, "Not approved");
-    require(amount - payAmount >= s.balances[sender], "Not enough snek in wallet");
+  function mineWithSnek(LibInterface.S storage s, bytes32 signedMessage, uint8 sigV, bytes32 sigR, bytes32 sigS, address sender, uint256 payAmount)
+  public onlyBy(s.root, s.root) returns(uint256){
+    uint256 rawData = uint256(signedMessage) & (2**224-1);
+    uint32 amount = uint32(rawData & (2**32-1));
+    rawData = rawData / (2**32);
+    uint32 nonce = uint32(rawData & (2**32-1));
+    rawData = rawData / (2**32);
+    //address user = address(rawData);
+    require(payAmount >= s.snekPriceToMine, "Not enough snek sent");
+    //require(amount - payAmount >= s.balances[sender], "Not enough snek in wallet");
+    require(ecrecover(keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", signedMessage)), sigV, sigR, sigS) == s.owner, "Not approved by owner");
+    require(address(rawData) == sender, "Not Approved User");
+    require(nonce == s.allowanceNonces[sender] , "Not Approved Nonce");
     s.balances[sender] = SafeMath.sub(SafeMath.add(s.balances[sender], amount), payAmount);
     s.balances[s.owner] = SafeMath.add(s.balances[s.owner], payAmount);
-    s.approvedMines[sender] = SafeMath.sub(s.approvedMines[sender], amount);
+    s.allowanceNonces[sender] = s.allowanceNonces[sender] + 1;
     s.totalSupp = SafeMath.add(s.totalSupp, amount);
-    return true;
+    return amount;
   }
-
+  function getUserNonce(LibInterface.S storage s, address who)
+  public view returns(uint32) {
+    return s.allowanceNonces[who];
+  }
   // *************************************************************************
   // ****************************** BEGIN ERC20 ******************************
   // *************************************************************************

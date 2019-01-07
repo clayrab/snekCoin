@@ -10,9 +10,10 @@ library LibInterface {
     uint256 weiPriceToMine;
     uint256 snekPriceToMine;
     address owner;
-    address root; //real contract which must be used for payable functions
+    address root; //The Token contract which must be used for payable functions
     address snekCurrentVersion;
-    mapping (address => uint256) approvedMines;
+    mapping (address => uint32) allowanceNonces;
+    uint256 newTotalSupply;
     // ****** BEGIN ERC20 ******
     uint256 totalSupp;
     bytes32 name;
@@ -39,14 +40,13 @@ library LibInterface {
 
   // ****** BEGIN CONTRACT BUSINESS FUNCTIONS ******
 
-  function approveMine(S storage s, address who, uint256 amount) public returns(bool);
-  function isMineApproved(S storage s, address who) public view returns(uint256);
   function changeMiningPrice(S storage s, uint256 amount)public returns(bool);
   function changeMiningSnekPrice(S storage s, uint256 amount) public returns(bool);
   function getMiningPrice(S storage s) public view returns(uint256);
   function getMiningSnekPrice(S storage s) public view returns(uint256);
-  function mine(S storage s, uint256 amount, address sender, uint256 value) public returns(bool);
-  function mineWithSnek(S storage s, uint256 amount, address sender, uint256 payAmount) public returns(bool);
+  function mine(S storage s, bytes32 signedMessage, uint8 sigV, bytes32 sigR, bytes32 sigS, address sender, uint256 value) public returns(uint256);
+  function mineWithSnek(S storage s, bytes32 signedMessage, uint8 sigV, bytes32 sigR, bytes32 sigS, address sender, uint256 payAmount) public returns(uint256);
+  function getUserNonce(S storage s, address who) public view returns(uint32);
   // ****** END CONTRACT BUSINESS FUNCTIONS ******
 
 

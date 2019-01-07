@@ -11,6 +11,14 @@ contract SnekCoinToken is Ownable {
   }
 
   // ****** BEGIN TEST FUNCTIONS ******
+  function getTokenSender()
+  public constant returns(address){
+    return msg.sender;
+  }
+  function getBackSender()
+  public constant returns(address){
+    return back.getBackSender();
+  }
   function getSender()
   public constant returns(address){
     return back.getSender();
@@ -18,17 +26,24 @@ contract SnekCoinToken is Ownable {
   // ****** END TEST FUNCTIONS ******
 
   // ****** BEGIN BASIC FUNCTIONS ******
+  event SetRoot(address sender, address root);
   function setRoot(address root)
-  public onlyBy(owner, owner) returns(bool){
-    return back.setRoot(root);
+  public onlyBy(owner, owner) returns(uint256){
+    uint256 newSupply  = back.setRoot(root);
+    emit SetRoot(msg.sender, root);
+    emit Transfer(0x0, msg.sender, newSupply);
+    return newSupply;
   }
   function getRoot()
   public view returns(address){
     return back.getRoot();
   }
+  event SetOwner(address sender, address owner);
   function setOwner(address owner)
   public onlyBy(owner, owner) returns(bool){
-    return back.setOwner(owner);
+    bool ret = back.setOwner(owner);
+    emit SetOwner(msg.sender, owner);
+    return ret;
   }
   function getOwner()
   public view returns(address){
@@ -37,22 +52,19 @@ contract SnekCoinToken is Ownable {
   // ****** END BASIC FUNCTIONS ******
 
   // ****** BEGIN CONTRACT BUSINESS FUNCTIONS ******
-  function approveMine(address who, uint256 amount)
-  public onlyBy(owner, owner) returns(bool) {
-    return back.approveMine(who, amount);
-  }
-  function isMineApproved(address who)
-  public view returns(uint256) {
-    return back.isMineApproved(who);
-  }
-
+  event ChangeMiningPrice(address sender, uint256 amount);
   function changeMiningPrice(uint256 amount)
   public onlyBy(owner, owner) returns(bool){
-    return back.changeMiningPrice(amount);
+    bool ret = back.changeMiningPrice(amount);
+    emit ChangeMiningPrice(msg.sender, amount);
+    return ret;
   }
+  event ChangeMiningSnekPrice(address sender, uint256 amount);
   function changeMiningSnekPrice(uint256 amount)
   public onlyBy(owner, owner) returns(bool){
-    return back.changeMiningSnekPrice(amount);
+    bool ret = back.changeMiningSnekPrice(amount);
+    emit ChangeMiningSnekPrice(msg.sender, amount);
+    return ret;
   }
 
   function getMiningPrice()
@@ -63,21 +75,32 @@ contract SnekCoinToken is Ownable {
   public view returns(uint256){
     return back.getMiningSnekPrice();
   }
-
-  function mine(uint256 amount)
-  public payable returns(bool) {
-    return back.mine(amount, msg.sender, msg.value);
+  event Mine(bytes32 signedMessage, address indexed sender, uint256 amount);
+  function mine(bytes32 signedMessage, uint8 sigV, bytes32 sigR, bytes32 sigS)
+  public payable returns(uint256) {
+    uint256 amount = back.mine(signedMessage, sigV, sigR, sigS, msg.sender, msg.value);
+    emit Mine(signedMessage, msg.sender, msg.value);
+    emit Transfer(0x0, msg.sender, amount);
+    return amount;
   }
-  function mineWithSnek(uint256 amount, uint256 payAmount)
-  public returns(bool) {
-    return back.mineWithSnek(amount, msg.sender, payAmount);
+  event MineWithSnek(bytes32 signedMessage, address indexed sender, uint256 amount);
+  function mineWithSnek(bytes32 signedMessage, uint8 sigV, bytes32 sigR, bytes32 sigS, uint256 payAmount)
+  public returns(uint256) {
+    uint256 amount = back.mineWithSnek(signedMessage, sigV, sigR, sigS, msg.sender, payAmount);
+    emit MineWithSnek(signedMessage, msg.sender, payAmount);
+    emit Transfer(0x0, msg.sender, amount);
+    return amount;
   }
-
+  function getUserNonce(address who)
+  public view returns(uint32) {
+    return back.getUserNonce(who);
+  }
   // ****** END CONTRACT BUSINESS FUNCTIONS ******
 
   // ****** BEGIN PAYABLE FUNCTIONS ******
+  event Paid(address sender, uint256 amount);
   function() public payable {
-    // accept random incoming payment
+    emit Paid(msg.sender, msg.value);
   }
   function withdraw(uint256 amountWei)
   onlyBy(owner, owner) public{
@@ -92,6 +115,8 @@ contract SnekCoinToken is Ownable {
   // ****** END PAYABLE FUNCTIONS ******
 
   // ****** BEGIN ERC20 ******
+  event Transfer(address indexed from, address indexed to, uint256 amount);
+  //Transfer(address indexed from, address indexed to, uint256 value);
   function totalSupply() public view returns(uint256){
     return back.totalSupply();
   }
@@ -101,14 +126,16 @@ contract SnekCoinToken is Ownable {
   function allowance(address tokenOwner, address spender) public view returns(uint256){
     return back.allowance(tokenOwner, spender);
   }
-  function transfer(address to, uint tokens) public returns(bool){
+  function transfer(address to, uint256 tokens) public returns(bool){
     return back.transfer(to, tokens, msg.sender);
+    //emit Transfer(msg.sender, to, tokens);
   }
-  function approve(address spender, uint tokens) public returns(bool){
+  function approve(address spender, uint256 tokens) public returns(bool){
     return back.approve(spender, tokens, msg.sender);
   }
-  function transferFrom(address from, address to, uint tokens) public returns(bool){
+  function transferFrom(address from, address to, uint256 tokens) public returns(bool){
     return back.transferFrom(from, to, tokens, msg.sender);
+    emit Transfer(from, to, tokens);
   }
   // ****** END ERC20 ******
 }
