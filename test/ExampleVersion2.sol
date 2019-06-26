@@ -1,9 +1,9 @@
-pragma solidity ^0.4.8;
+pragma solidity ^0.5.8;
 
 import "./LibInterfaceExample.sol";
 
 library ExampleVersion2 {
-  function getUint(LibInterfaceExample.S storage s) public constant returns (uint) {
+  function getUint(LibInterfaceExample.S storage s) public view returns (uint) {
     return s.i * 10;
   }
 

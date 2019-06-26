@@ -1,9 +1,9 @@
-pragma solidity ^0.4.8;
+pragma solidity ^0.5.8;
 
 contract Example2WithoutProxy {
   uint i;
 
-  function getUint() public constant returns (uint) {
+  function getUint() public view returns (uint) {
     return i * 10;
   }
 

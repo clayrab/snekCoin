@@ -1,4 +1,4 @@
-pragma solidity ^0.4.10;
+pragma solidity ^0.5.8;
 
 import "./LibInterface.sol";
 import "./lib/Ownable.sol";
@@ -31,7 +31,8 @@ contract SnekCoinBack is Ownable {
     s.decimals = dec;
     //s.balances[msg.sender] = ts;
     s.totalSupp = ts;
-    s.newTotalSupply = ts;
+    //s.newTotalSupply = ts;
+    s.balances[msg.sender] = ts;
     s.owner = msg.sender;
     s.root = address(this);
     s.weiPriceToMine = 1000000000000; // 0.000001 ETH
@@ -40,27 +41,20 @@ contract SnekCoinBack is Ownable {
 
   // ****** BEGIN TEST FUNCTIONS ******
   function getBackSender()
-  public constant returns(address){
+  public view returns(address){
     return msg.sender;
   }
   function getSender()
-  public constant returns(address){
+  public view returns(address){
     return s.getSender();
   }
   // ****** END TEST FUNCTIONS ******
 
   // ****** BEGIN BASIC FUNCTIONS ******
   function setRoot(address root)
-  public onlyBy(owner, s.root) returns(uint256){
+  public onlyBy(owner, s.root) returns(bool){
     s.root = root;
-    if(s.newTotalSupply > 0) {
-      uint256 newSupply = s.newTotalSupply;
-      //s.balances[s.owner] = newSupply;
-      s.balances[s.owner] = SafeMath.add(s.balances[s.owner], newSupply);
-      s.newTotalSupply = 0;
-      return newSupply;
-    }
-    return 0;
+    return true;
   }
   function getRoot()
   public view returns(address){
@@ -74,37 +68,52 @@ contract SnekCoinBack is Ownable {
   public view returns(address){
     return s.owner;
   }
+  /* function distributeSupply()
+  public onlyBy(owner, s.root) returns(uint256){
+    if(s.newTotalSupply > 0) {
+      uint256 newSupply = s.newTotalSupply;
+      s.balances[s.owner] = SafeMath.add(s.balances[s.owner], newSupply);
+      s.newTotalSupply = 0;
+      return newSupply;
+    }
+    return 0;
+  } */
   // ****** END BASIC FUNCTIONS ******
 
   // ****** BEGIN CONTRACT BUSINESS FUNCTIONS ******
-
-  function changeMiningPrice(uint256 amount)
-  public onlyBy(s.root, s.root) returns(bool){
-    return s.changeMiningPrice(amount);
-  }
-
-  function changeMiningSnekPrice(uint256 amount)
-  public onlyBy(s.root, s.root) returns(bool){
-    return s.changeMiningSnekPrice(amount);
-  }
-
-  function getMiningPrice()
-  public view returns(uint256){
-    return s.getMiningPrice();
-  }
-  function getMiningSnekPrice()
-  public view returns(uint256){
-    return s.getMiningSnekPrice();
-  }
+  //
+  // function changeMiningPrice(uint256 amount)
+  // public onlyBy(s.root, s.root) returns(bool){
+  //   return s.changeMiningPrice(amount);
+  // }
+  //
+  // function changeMiningSnekPrice(uint256 amount)
+  // public onlyBy(s.root, s.root) returns(bool){
+  //   return s.changeMiningSnekPrice(amount);
+  // }
+  //
+  // function getMiningPrice()
+  // public view returns(uint256){
+  //   return s.getMiningPrice();
+  // }
+  // function getMiningSnekPrice()
+  // public view returns(uint256){
+  //   return s.getMiningSnekPrice();
+  // }
 
   //function mine(uint256 amount, address sender, uint256 value)
-  function mine(bytes32 signedMessage, uint8 sigV, bytes32 sigR, bytes32 sigS, address sender, uint256 value)
+  // function mine(bytes32 signedMessage, uint8 sigV, bytes32 sigR, bytes32 sigS, address sender, uint256 value)
+  // public onlyBy(s.root, s.root) returns(uint256) {
+  //   return s.mine(signedMessage, sigV, sigR, sigS, sender, value);
+  // }
+  // function mineWithSnek(bytes32 signedMessage, uint8 sigV, bytes32 sigR, bytes32 sigS, address sender, uint256 payAmount)
+  // public onlyBy(s.root, s.root) returns(uint256) {
+  //   return s.mineWithSnek(signedMessage, sigV, sigR, sigS, sender, payAmount);
+  // }
+
+  function mineForUser(address user, uint256 amount)
   public onlyBy(s.root, s.root) returns(uint256) {
-    return s.mine(signedMessage, sigV, sigR, sigS, sender, value);
-  }
-  function mineWithSnek(bytes32 signedMessage, uint8 sigV, bytes32 sigR, bytes32 sigS, address sender, uint256 payAmount)
-  public onlyBy(s.root, s.root) returns(uint256) {
-    return s.mineWithSnek(signedMessage, sigV, sigR, sigS, sender, payAmount);
+    return s.mineForUser(user, amount);
   }
   function getUserNonce(address who)
   public view returns(uint32){

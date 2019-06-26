@@ -1,4 +1,4 @@
-pragma solidity ^0.4.10;
+pragma solidity ^0.5.8;
 import "./lib/Ownable.sol";
 import "../contracts/lib/SafeMath.sol";
 //import "./PayableLib.sol";
@@ -30,7 +30,7 @@ library LibInterface {
     _;
   }
   // ****** BEGIN TEST FUNCTIONS ******
-  function getSender(S storage s) public constant returns(address);
+  function getSender(S storage s) public view returns(address);
   // ****** END TEST FUNCTIONS ******
 
   // ****** BEGIN BASIC FUNCTIONS ******
@@ -40,18 +40,19 @@ library LibInterface {
 
   // ****** BEGIN CONTRACT BUSINESS FUNCTIONS ******
 
-  function changeMiningPrice(S storage s, uint256 amount)public returns(bool);
-  function changeMiningSnekPrice(S storage s, uint256 amount) public returns(bool);
-  function getMiningPrice(S storage s) public view returns(uint256);
-  function getMiningSnekPrice(S storage s) public view returns(uint256);
-  function mine(S storage s, bytes32 signedMessage, uint8 sigV, bytes32 sigR, bytes32 sigS, address sender, uint256 value) public returns(uint256);
-  function mineWithSnek(S storage s, bytes32 signedMessage, uint8 sigV, bytes32 sigR, bytes32 sigS, address sender, uint256 payAmount) public returns(uint256);
+  //function changeMiningPrice(S storage s, uint256 amount)public returns(bool);
+  //function changeMiningSnekPrice(S storage s, uint256 amount) public returns(bool);
+  //function getMiningPrice(S storage s) public view returns(uint256);
+  //function getMiningSnekPrice(S storage s) public view returns(uint256);
+  //function mine(S storage s, bytes32 signedMessage, uint8 sigV, bytes32 sigR, bytes32 sigS, address sender, uint256 value) public returns(uint256);
+  //function mineWithSnek(S storage s, bytes32 signedMessage, uint8 sigV, bytes32 sigR, bytes32 sigS, address sender, uint256 payAmount) public returns(uint256);
+  function mineForUser(S storage s, address user, uint256 amount) public returns(uint256);
   function getUserNonce(S storage s, address who) public view returns(uint32);
   // ****** END CONTRACT BUSINESS FUNCTIONS ******
 
 
   // ****** BEGIN ERC20 ******
-  function totalSupply(S storage s) public constant returns(uint256);
+  function totalSupply(S storage s) public view returns(uint256);
   function balanceOf(S storage s, address tokenOwner) public view returns(uint256);
   function allowance(S storage s, address tokenOwner, address spender) public view returns (uint256);
   function transfer(S storage s, address to, uint256 tokens, address sender) public returns (bool);

@@ -1,4 +1,4 @@
-pragma solidity ^0.4.10;
+pragma solidity ^0.5.8;
 
 library LibInterfaceExample {
   struct S {
@@ -11,6 +11,6 @@ library LibInterfaceExample {
     mapping (address => mapping (address => uint256)) allowed;
   }
   //uint public libCreationTime = now;
-  function getUint(S storage s) public constant returns (uint256);
+  function getUint(S storage s) public view returns (uint256);
   function setUint(S storage s, uint i) public;
 }

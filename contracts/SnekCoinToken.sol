@@ -1,4 +1,4 @@
-pragma solidity ^0.4.10;
+pragma solidity ^0.5.8;
 
 import "./LibInterface.sol";
 import "./lib/Ownable.sol";
@@ -12,15 +12,15 @@ contract SnekCoinToken is Ownable {
 
   // ****** BEGIN TEST FUNCTIONS ******
   function getTokenSender()
-  public constant returns(address){
+  public view returns(address){
     return msg.sender;
   }
   function getBackSender()
-  public constant returns(address){
+  public view returns(address){
     return back.getBackSender();
   }
   function getSender()
-  public constant returns(address){
+  public view returns(address){
     return back.getSender();
   }
   // ****** END TEST FUNCTIONS ******
@@ -28,12 +28,12 @@ contract SnekCoinToken is Ownable {
   // ****** BEGIN BASIC FUNCTIONS ******
   event SetRoot(address sender, address root);
   function setRoot(address root)
-  public onlyBy(owner, owner) returns(uint256){
-    uint256 newSupply  = back.setRoot(root);
+  public onlyBy(owner, owner) returns(bool){
+    bool ret = back.setRoot(root);
     emit SetRoot(msg.sender, root);
-    emit Transfer(0x0, msg.sender, newSupply);
-    return newSupply;
+    return ret;
   }
+
   function getRoot()
   public view returns(address){
     return back.getRoot();
@@ -52,44 +52,50 @@ contract SnekCoinToken is Ownable {
   // ****** END BASIC FUNCTIONS ******
 
   // ****** BEGIN CONTRACT BUSINESS FUNCTIONS ******
-  event ChangeMiningPrice(address sender, uint256 amount);
-  function changeMiningPrice(uint256 amount)
-  public onlyBy(owner, owner) returns(bool){
-    bool ret = back.changeMiningPrice(amount);
-    emit ChangeMiningPrice(msg.sender, amount);
-    return ret;
-  }
-  event ChangeMiningSnekPrice(address sender, uint256 amount);
-  function changeMiningSnekPrice(uint256 amount)
-  public onlyBy(owner, owner) returns(bool){
-    bool ret = back.changeMiningSnekPrice(amount);
-    emit ChangeMiningSnekPrice(msg.sender, amount);
-    return ret;
-  }
-
-  function getMiningPrice()
-  public view returns(uint256){
-    return back.getMiningPrice();
-  }
-  function getMiningSnekPrice()
-  public view returns(uint256){
-    return back.getMiningSnekPrice();
-  }
-  event Mine(bytes32 signedMessage, address indexed sender, uint256 amount);
-  function mine(bytes32 signedMessage, uint8 sigV, bytes32 sigR, bytes32 sigS)
-  public payable returns(uint256) {
-    uint256 amount = back.mine(signedMessage, sigV, sigR, sigS, msg.sender, msg.value);
-    emit Mine(signedMessage, msg.sender, msg.value);
-    emit Transfer(0x0, msg.sender, amount);
-    return amount;
-  }
-  event MineWithSnek(bytes32 signedMessage, address indexed sender, uint256 amount);
-  function mineWithSnek(bytes32 signedMessage, uint8 sigV, bytes32 sigR, bytes32 sigS, uint256 payAmount)
-  public returns(uint256) {
-    uint256 amount = back.mineWithSnek(signedMessage, sigV, sigR, sigS, msg.sender, payAmount);
-    emit MineWithSnek(signedMessage, msg.sender, payAmount);
-    emit Transfer(0x0, msg.sender, amount);
-    return amount;
+  // event ChangeMiningPrice(address sender, uint256 amount);
+  // function changeMiningPrice(uint256 amount)
+  // public onlyBy(owner, owner) returns(bool){
+  //   bool ret = back.changeMiningPrice(amount);
+  //   emit ChangeMiningPrice(msg.sender, amount);
+  //   return ret;
+  // }
+  // event ChangeMiningSnekPrice(address sender, uint256 amount);
+  // function changeMiningSnekPrice(uint256 amount)
+  // public onlyBy(owner, owner) returns(bool){
+  //   bool ret = back.changeMiningSnekPrice(amount);
+  //   emit ChangeMiningSnekPrice(msg.sender, amount);
+  //   return ret;
+  // }
+  //
+  // function getMiningPrice()
+  // public view returns(uint256){
+  //   return back.getMiningPrice();
+  // }
+  // function getMiningSnekPrice()
+  // public view returns(uint256){
+  //   return back.getMiningSnekPrice();
+  // }
+  // event Mine(bytes32 signedMessage, address indexed sender, uint256 amount);
+  // function mine(bytes32 signedMessage, uint8 sigV, bytes32 sigR, bytes32 sigS)
+  // public payable returns(uint256) {
+  //   uint256 amount = back.mine(signedMessage, sigV, sigR, sigS, msg.sender, msg.value);
+  //   emit Mine(signedMessage, msg.sender, msg.value);
+  //   emit Transfer(0x0, msg.sender, amount);
+  //   return amount;
+  // }
+  // event MineWithSnek(bytes32 signedMessage, address indexed sender, uint256 amount);
+  // function mineWithSnek(bytes32 signedMessage, uint8 sigV, bytes32 sigR, bytes32 sigS, uint256 payAmount)
+  // public returns(uint256) {
+  //   uint256 amount = back.mineWithSnek(signedMessage, sigV, sigR, sigS, msg.sender, payAmount);
+  //   emit MineWithSnek(signedMessage, msg.sender, payAmount);
+  //   emit Transfer(0x0, msg.sender, amount);
+  //   return amount;
+  // }
+  event MineForUser(address indexed sender, uint256 amount);
+  function mineForUser(address user, uint256 amount)
+  public onlyBy(owner, owner) returns(uint256) {
+    emit MineForUser(user, amount);
+    return back.mineForUser(user, amount);
   }
   function getUserNonce(address who)
   public view returns(uint32) {
@@ -99,12 +105,14 @@ contract SnekCoinToken is Ownable {
 
   // ****** BEGIN PAYABLE FUNCTIONS ******
   event Paid(address sender, uint256 amount);
-  function() public payable {
+  function() external payable {
     emit Paid(msg.sender, msg.value);
   }
   function withdraw(uint256 amountWei)
   onlyBy(owner, owner) public{
+    require(address(this).balance > amountWei, "Not enough Wei available for withdrawal.");
     if(address(this).balance > amountWei) {
+      emit Transfer(address(this), owner, amountWei);
       msg.sender.transfer(amountWei);
     }
   }
@@ -127,15 +135,15 @@ contract SnekCoinToken is Ownable {
     return back.allowance(tokenOwner, spender);
   }
   function transfer(address to, uint256 tokens) public returns(bool){
+    emit Transfer(msg.sender, to, tokens);
     return back.transfer(to, tokens, msg.sender);
-    //emit Transfer(msg.sender, to, tokens);
   }
   function approve(address spender, uint256 tokens) public returns(bool){
     return back.approve(spender, tokens, msg.sender);
   }
   function transferFrom(address from, address to, uint256 tokens) public returns(bool){
-    return back.transferFrom(from, to, tokens, msg.sender);
     emit Transfer(from, to, tokens);
+    return back.transferFrom(from, to, tokens, msg.sender);
   }
   // ****** END ERC20 ******
 }

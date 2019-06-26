@@ -1,9 +1,9 @@
-pragma solidity ^0.4.10;
+pragma solidity ^0.5.8;
 
 import "./DispatcherStorage.sol";
 
 contract Dispatcher {
-  function() public {
+  function() external {
     DispatcherStorage dispatcherStorage = DispatcherStorage(0x1111222233334444555566667777888899990000);
     address target = dispatcherStorage.lib();
 
