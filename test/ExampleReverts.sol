@@ -4,7 +4,9 @@ import "./LibInterfaceExample.sol";
 
 library ExampleReverts {
   function getUint(LibInterfaceExample.S storage s) public view returns (uint) {
-    revert();
+    if(true){ // silences compiler warning.
+      revert();
+    }
     return s.i;
   }
   function setUint(LibInterfaceExample.S storage s, uint i) public {

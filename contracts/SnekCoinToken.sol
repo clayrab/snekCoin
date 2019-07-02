@@ -52,51 +52,51 @@ contract SnekCoinToken is Ownable {
   // ****** END BASIC FUNCTIONS ******
 
   // ****** BEGIN CONTRACT BUSINESS FUNCTIONS ******
-  // event ChangeMiningPrice(address sender, uint256 amount);
-  // function changeMiningPrice(uint256 amount)
-  // public onlyBy(owner, owner) returns(bool){
-  //   bool ret = back.changeMiningPrice(amount);
-  //   emit ChangeMiningPrice(msg.sender, amount);
-  //   return ret;
-  // }
-  // event ChangeMiningSnekPrice(address sender, uint256 amount);
-  // function changeMiningSnekPrice(uint256 amount)
-  // public onlyBy(owner, owner) returns(bool){
-  //   bool ret = back.changeMiningSnekPrice(amount);
-  //   emit ChangeMiningSnekPrice(msg.sender, amount);
-  //   return ret;
-  // }
-  //
-  // function getMiningPrice()
-  // public view returns(uint256){
-  //   return back.getMiningPrice();
-  // }
-  // function getMiningSnekPrice()
-  // public view returns(uint256){
-  //   return back.getMiningSnekPrice();
-  // }
-  // event Mine(bytes32 signedMessage, address indexed sender, uint256 amount);
-  // function mine(bytes32 signedMessage, uint8 sigV, bytes32 sigR, bytes32 sigS)
-  // public payable returns(uint256) {
-  //   uint256 amount = back.mine(signedMessage, sigV, sigR, sigS, msg.sender, msg.value);
-  //   emit Mine(signedMessage, msg.sender, msg.value);
-  //   emit Transfer(0x0, msg.sender, amount);
-  //   return amount;
-  // }
-  // event MineWithSnek(bytes32 signedMessage, address indexed sender, uint256 amount);
-  // function mineWithSnek(bytes32 signedMessage, uint8 sigV, bytes32 sigR, bytes32 sigS, uint256 payAmount)
-  // public returns(uint256) {
-  //   uint256 amount = back.mineWithSnek(signedMessage, sigV, sigR, sigS, msg.sender, payAmount);
-  //   emit MineWithSnek(signedMessage, msg.sender, payAmount);
-  //   emit Transfer(0x0, msg.sender, amount);
-  //   return amount;
-  // }
-  event MineForUser(address indexed sender, uint256 amount);
-  function mineForUser(address user, uint256 amount)
-  public onlyBy(owner, owner) returns(uint256) {
-    emit MineForUser(user, amount);
-    return back.mineForUser(user, amount);
+  event ChangeMiningPrice(address sender, uint256 amount);
+  function changeMiningPrice(uint256 amount)
+  public onlyBy(owner, owner) returns(bool){
+    bool ret = back.changeMiningPrice(amount);
+    emit ChangeMiningPrice(msg.sender, amount);
+    return ret;
   }
+  event ChangeMiningSnekPrice(address sender, uint256 amount);
+  function changeMiningSnekPrice(uint256 amount)
+  public onlyBy(owner, owner) returns(bool){
+    bool ret = back.changeMiningSnekPrice(amount);
+    emit ChangeMiningSnekPrice(msg.sender, amount);
+    return ret;
+  }
+
+  function getMiningPrice()
+  public view returns(uint256){
+    return back.getMiningPrice();
+  }
+  function getMiningSnekPrice()
+  public view returns(uint256){
+    return back.getMiningSnekPrice();
+  }
+  event Mine(bytes32 signedMessage, address indexed sender, uint256 amount);
+  function mine(bytes32 signedMessage, uint8 sigV, bytes32 sigR, bytes32 sigS)
+  public payable returns(uint256) {
+    uint256 amount = back.mine(signedMessage, sigV, sigR, sigS, msg.sender, msg.value);
+    emit Mine(signedMessage, msg.sender, msg.value);
+    emit Transfer(0x0000000000000000000000000000000000000000, msg.sender, amount);
+    return amount;
+  }
+  event MineWithSnek(bytes32 signedMessage, address indexed sender, uint256 amount);
+  function mineWithSnek(bytes32 signedMessage, uint8 sigV, bytes32 sigR, bytes32 sigS, uint256 payAmount)
+  public returns(uint256) {
+    uint256 amount = back.mineWithSnek(signedMessage, sigV, sigR, sigS, msg.sender, payAmount);
+    emit MineWithSnek(signedMessage, msg.sender, payAmount);
+    emit Transfer(0x0000000000000000000000000000000000000000, msg.sender, amount);
+    return amount;
+  }
+  // event MineForUser(address indexed sender, uint256 amount);
+  // function mineForUser(address user, uint256 amount)
+  // public onlyBy(owner, owner) returns(uint256) {
+  //   emit MineForUser(user, amount);
+  //   return back.mineForUser(user, amount);
+  // }
   function getUserNonce(address who)
   public view returns(uint32) {
     return back.getUserNonce(who);
