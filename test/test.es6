@@ -31,6 +31,12 @@ contract('Test Contracts', (accounts) => {
   let dispatcher;
   let snekcoinback;
   let snekcointoken;
+  let snekcoinback2;
+  let snekcointoken2;
+  let snekcoinback3;
+  let snekcointoken3;
+  let snekcoinback4;
+  let snekcointoken4;
   let fakesnekcointoken;
 
   let exampleVersion1;
@@ -81,9 +87,22 @@ contract('Test Contracts', (accounts) => {
               dispatcherStorage.address.slice(2));
       dispatcher = await Dispatcher.new();
       SnekCoinBack.link('LibInterface', dispatcher.address);
-      snekcoinback = await SnekCoinBack.new(web3.utils.fromAscii("TestContract"), 20, 1000000);
+      snekcoinback = await SnekCoinBack.new(web3.utils.fromAscii("TestContract"), 20, 10239000);
       snekcointoken = await SnekCoinToken.new(snekcoinback.address);
       snekcoinback.setRoot(snekcointoken.address);
+
+      snekcoinback2 = await SnekCoinBack.new(web3.utils.fromAscii("TestContract2"), 20, 10240000);
+      snekcointoken2 = await SnekCoinToken.new(snekcoinback2.address);
+      snekcoinback2.setRoot(snekcointoken2.address);
+
+      snekcoinback3 = await SnekCoinBack.new(web3.utils.fromAscii("TestContract2"), 20, 10240000*10);
+      snekcointoken3 = await SnekCoinToken.new(snekcoinback3.address);
+      snekcoinback3.setRoot(snekcointoken3.address);
+
+      snekcoinback4 = await SnekCoinBack.new(web3.utils.fromAscii("TestContract2"), 20, 10240000*11);
+      snekcointoken4 = await SnekCoinToken.new(snekcoinback4.address);
+      snekcoinback4.setRoot(snekcointoken4.address);
+
       fakesnekcointoken = await SnekCoinToken.new(snekcoinback.address);
 
     });
@@ -135,11 +154,11 @@ contract('Test Contracts', (accounts) => {
 
     it("snekcoin can be updated", async function() {
       var totalSupply = await snekcointoken.totalSupply.call();
-      assert.equal(1000000, totalSupply.toNumber(), "expected supply of 1000000");
+      assert.equal(10239000, totalSupply.toNumber(), "expected supply of 10239000");
       // break it!
       await dispatcherStorage.replace(snek00x.address);
       totalSupply = await snekcointoken.totalSupply.call();
-      assert.equal(totalSupply.toNumber(), 1000000 * 10, "expected supply to be 10x");
+      assert.equal(totalSupply.toNumber(), 10239000 * 10, "expected supply to be 10x");
       // REALLY BREAK IT!!
       await dispatcherStorage.replace("0x0000000000000000000000000000000000000000");
       snekcointoken.totalSupply.call().then(() => {
@@ -150,7 +169,7 @@ contract('Test Contracts', (accounts) => {
       // And put it back to normal...
       await dispatcherStorage.replace(snek001.address);
       totalSupply = await snekcointoken.totalSupply.call();
-      assert.equal(1000000, totalSupply.toNumber(), "expected supply of 1000000");
+      assert.equal(10239000, totalSupply.toNumber(), "expected supply of 10239000");
     });
 
     it("snekcoin root should be SnekCoin", async function() {
@@ -159,7 +178,7 @@ contract('Test Contracts', (accounts) => {
     });
     it("snekcoin should have total supply 1000000 or more", async function() {
       var totalSupply = await snekcointoken.totalSupply.call();
-      assert.equal(1000000, totalSupply.toNumber(), "expected supply of 1000000");
+      assert.equal(10239000, totalSupply.toNumber(), "expected supply of 10239000");
     });
     it("snekcoin owner should have total supply", async function() {
       var totalSupply = await snekcointoken.totalSupply.call();
@@ -231,111 +250,138 @@ contract('Test Contracts', (accounts) => {
       var user1Balance = await snekcointoken.balanceOf(user1);
       var totalSupply = await snekcointoken.totalSupply();
       let badSigPart = "0x0000000000000000000000000000000000000000000000000000000000000000";
-      let sigData = await signAs(owner, user1Nonce, 1000, user1);
-      // price can be changed
+
+      // prices can be changed
       await snekcointoken.changeMiningPrice(1000000, {from: owner});
       var miningPrice = await snekcointoken.getMiningPrice();
-      assert.equal(miningPrice.toNumber(), 1000000, "expected 1000000");
-      // price can only be changed by owner
+      assert.equal(miningPrice.toNumber(), 1000000, "expected 100000");
+
+      await snekcointoken.changeEggPrice(1000000, {from: owner});
+      var eggPrice = await snekcointoken.getEggPrice();
+      assert.equal(eggPrice.toNumber(), 1000000, "expected 1000000");
+
+      let tokensPerEgg = await snekcointoken.getMiningRate({from: user2});
+      let howManyEggs = 2;
+      let price = (howManyEggs * eggPrice.toNumber()) + miningPrice.toNumber();
+      let howMany = howManyEggs*tokensPerEgg.toNumber();
+      let sigData = await signAs(owner, user1Nonce, howMany, user1);
+
+      // prices can only be changed by owner
       await snekcointoken.changeMiningPrice(1, {from: user1}).then(() => {
         throw null;
       }).catch(function(error) {
-        assert.isNotNull(error, "Expected unapproved revert");
+        assert.isNotNull(error, "Expected unapproved revert 1");
+      });
+      await snekcointoken.changeEggPrice(1, {from: user1}).then(() => {
+        throw null;
+      }).catch(function(error) {
+        assert.isNotNull(error, "Expected unapproved revert 2");
       });
 
       // mining must be approved
-      await snekcointoken.mine(sigData[0], sigData[1], badSigPart, sigData[3], {from: user1, value: 1000000}).then(() => {
+      await snekcointoken.mine(sigData[0], sigData[1], badSigPart, sigData[3], 1, {from: user1, value: 1000000}).then(() => {
         throw null;
       }).catch(function(error) {
-        assert.isNotNull(error, "Expected unapproved revert");
+        assert.isTrue(error.toString().startsWith("Error: Returned error: VM Exception while processing transaction: revert Not approved by owner -- Reason given: Not approved by owner"), "Expected unapproved revert 3");
       });
-      // ...by owner
+      //...by owner
       let fakeSigData = await signAs(user1, 0, 1000, user1);
-      await snekcointoken.mine(fakeSigData[0], fakeSigData[1], fakeSigData[2], fakeSigData[3], {from: user1, value: 1000000}).then(() => {
+      await snekcointoken.mine(fakeSigData[0], fakeSigData[1], fakeSigData[2], fakeSigData[3], 100, {from: user1, value: 1000000}).then(() => {
         throw null;
       }).catch(function(error) {
-        assert.isNotNull(error, "Expected user1 can't approve");
+        assert.isTrue(error.toString().startsWith("Error: Returned error: VM Exception while processing transaction: revert Not approved by owner -- Reason given: Not approved by owner."), "Expected user1 can't approve");
       });
       // sending less than the price will yield nothing
-      await snekcointoken.mine(sigData[0], sigData[1], sigData[2], sigData[3], {from: user1, value: 10}).then(() => {
+      await snekcointoken.mine(sigData[0], sigData[1], sigData[2], sigData[3], howManyEggs, {from: user1, value: 10}).then(() => {
         throw null;
       }).catch(function(error) {
-        assert.isNotNull(error, "Expected revert, but got none");
+        assert.isTrue(error.toString().startsWith("Error: Returned error: VM Exception while processing transaction: revert Not enough ethereum -- Reason given: Not enough ethereum."), "Expected sending less than the price will yield nothing");
       });
-      await snekcointoken.mine(sigData[0], sigData[1], sigData[2], sigData[3], {from: user1, value: 1000000});
-      var newUser1Balance = await snekcointoken.balanceOf(user1);
-      assert.equal(user1Balance.toNumber() + 1000, newUser1Balance.toNumber(), "expected 1000 more");
+
+      // let tokensPerEgg = await snekcointoken.getMiningRate({from: user2});
+      // let howManyEggs = 2;
+      // let price = (howManyEggs*eggPrice) + miningPrice;
+      // let howMany = howManyEggs*tokensPerEgg;
+      // let sigData = await signAs(owner, user1Nonce, price , user1);
+
+      await snekcointoken.mine(sigData[0], sigData[1], sigData[2], sigData[3], howManyEggs, {from: user1, value: price}).then(() => {
+        throw null;
+      }).catch(function(error) {
+        assert.isNull(error, "Expected no error");
+      });
+      // var newUser1Balance = await snekcointoken.balanceOf(user1);
+      // assert.equal(user1Balance.toNumber() + howMany, newUser1Balance.toNumber(), "expected " + howMany + " more");
       //replaying the sig fails
-      await snekcointoken.mine(sigData[0], sigData[1], sigData[2], sigData[3], {from: user1, value: 1000000}).then(() => {
-        throw null;
-      }).catch(function(error) {
-        assert.isNotNull(error, "Expected revert, but got none!!");
-      });
-      //replaying by another user fails
-      await snekcointoken.mine(sigData[0], sigData[1], sigData[2], sigData[3], {from: user2, value: 1000000}).then(() => {
-        throw null;
-      }).catch(function(error) {
-        assert.isNotNull(error, "Expected revert, but got none!!");
-      });
-      // using the next nonce is okay
-      let nextNonceSigData = await signAs(owner, user1Nonce + 1, 2000, user1);
-      await snekcointoken.mine(nextNonceSigData[0], nextNonceSigData[1], nextNonceSigData[2], nextNonceSigData[3], {from: user1, value: 1000000});
-      var newNewUser1Balance = await snekcointoken.balanceOf(user1);
-      assert.equal(newUser1Balance.toNumber() + 2000, newNewUser1Balance.toNumber(), "expected 2000 more");
-      // user1 nonce should increase by 2
-      let user1NewNonce = await snekcointoken.getUserNonce.call(user1);
-      assert.equal(user1Nonce.toNumber() + 2, user1NewNonce.toNumber(), "expected nonce + 2");
+      // await snekcointoken.mine(sigData[0], sigData[1], sigData[2], sigData[3], {from: user1, value: 1000000}).then(() => {
+      //   throw null;
+      // }).catch(function(error) {
+      //   assert.isNotNull(error, "Expected revert, but got none!!");
+      // });
+      // //replaying by another user fails
+      // await snekcointoken.mine(sigData[0], sigData[1], sigData[2], sigData[3], {from: user2, value: 1000000}).then(() => {
+      //   throw null;
+      // }).catch(function(error) {
+      //   assert.isNotNull(error, "Expected revert, but got none!!");
+      // });
+      // // using the next nonce is okay
+      // let nextNonceSigData = await signAs(owner, user1Nonce + 1, 2000, user1);
+      // await snekcointoken.mine(nextNonceSigData[0], nextNonceSigData[1], nextNonceSigData[2], nextNonceSigData[3], {from: user1, value: 1000000});
+      // var newNewUser1Balance = await snekcointoken.balanceOf(user1);
+      // assert.equal(newUser1Balance.toNumber() + 2000, newNewUser1Balance.toNumber(), "expected 2000 more");
+      // // user1 nonce should increase by 2
+      // let user1NewNonce = await snekcointoken.getUserNonce.call(user1);
+      // assert.equal(user1Nonce.toNumber() + 2, user1NewNonce.toNumber(), "expected nonce + 2");
     });
 
-    it("snekcoin can be mined with snek", async function() {
-      //let fakeUser = "0x0000000000000000000000000000000000000000000000000000000000000000000000000000"
-      let fakeUserNonce = await snekcointoken.getUserNonce.call(fakeUser);
-      let user1Nonce = await snekcointoken.getUserNonce.call(user1);
-      let ownerBalance = await snekcointoken.balanceOf(owner);
-      let user1Balance = await snekcointoken.balanceOf(user1);
-      let totalSupply = await snekcointoken.totalSupply();
-      let badSigPart = "0x0000000000000000000000000000000000000000000000000000000000000000";
-      let sigData = await signAs(owner, user1Nonce, 1000, user1);
-
-      // price can only be changed by owner
-      await snekcointoken.changeMiningSnekPrice(1, {from: user1}).then(() => {
-        throw null;
-      }).catch(function(error) {
-        assert.isNotNull(error, "Expected unapproved revert");
-      });
-      // snek price can be changed
-      await snekcointoken.changeMiningSnekPrice(10, {from: owner});
-      var miningPrice = await snekcointoken.getMiningSnekPrice();
-      assert.equal(miningPrice.toNumber(), 10, "expected 10");
-      // mining must be pre-approved by owner
-      await snekcointoken.mineWithSnek(sigData[0], sigData[1], badSigPart, sigData[3], 10, {from: user1}).then(() => {
-        throw null;
-      }).catch(function(error) {
-        assert.isNotNull(error, "Expected unapproved revert badSigPart");
-      });
-      // sending less than the price will yield nothing
-      await snekcointoken.mineWithSnek(sigData[0], sigData[1], sigData[2], sigData[3], 1, {from: user1, value: 10}).then(() => {
-        throw null;
-      }).catch(function(error) {
-        assert.isNotNull(error, "Expected revert. not enough snek paid.");
-      });
-      // Sending enough snek succeeds
-      await snekcointoken.mineWithSnek(sigData[0], sigData[1], sigData[2], sigData[3], 10, {from: user1});
-      var newUser1Balance = await snekcointoken.balanceOf(user1);
-      var newOwnerBalance = await snekcointoken.balanceOf(owner);
-      assert.equal(user1Balance.toNumber() + 990, newUser1Balance.toNumber(), "expected 990 more");
-      assert.equal(ownerBalance.toNumber() + 10, newOwnerBalance.toNumber(), "expected 10 more");
-      //replaying fails
-      await snekcointoken.mineWithSnek(sigData[0], sigData[1], sigData[2], sigData[3], 10, {from: user1}).then(() => {
-        throw null;
-      }).catch(function(error) {
-        assert.isNotNull(error, "Expected revert replaying!!");
-      });
-
-      // total supply should increase
-      var newTotalSupply = await snekcointoken.totalSupply();
-      assert.equal(totalSupply.toNumber() + 1000, newTotalSupply.toNumber(), "expected supply change");
-    });
+    // it("snekcoin can be mined with snek", async function() {
+    //   //let fakeUser = "0x0000000000000000000000000000000000000000000000000000000000000000000000000000"
+    //   let fakeUserNonce = await snekcointoken.getUserNonce.call(fakeUser);
+    //   let user1Nonce = await snekcointoken.getUserNonce.call(user1);
+    //   let ownerBalance = await snekcointoken.balanceOf(owner);
+    //   let user1Balance = await snekcointoken.balanceOf(user1);
+    //   let totalSupply = await snekcointoken.totalSupply();
+    //   let badSigPart = "0x0000000000000000000000000000000000000000000000000000000000000000";
+    //   let sigData = await signAs(owner, user1Nonce, 1000, user1);
+    //
+    //   // price can only be changed by owner
+    //   await snekcointoken.changeMiningSnekPrice(1, {from: user1}).then(() => {
+    //     throw null;
+    //   }).catch(function(error) {
+    //     assert.isNotNull(error, "Expected unapproved revert");
+    //   });
+    //   // snek price can be changed
+    //   await snekcointoken.changeMiningSnekPrice(10, {from: owner});
+    //   var miningPrice = await snekcointoken.getMiningSnekPrice();
+    //   assert.equal(miningPrice.toNumber(), 10, "expected 10");
+    //   // mining must be pre-approved by owner
+    //   await snekcointoken.mineWithSnek(sigData[0], sigData[1], badSigPart, sigData[3], 10, {from: user1}).then(() => {
+    //     throw null;
+    //   }).catch(function(error) {
+    //     assert.isNotNull(error, "Expected unapproved revert badSigPart");
+    //   });
+    //   // sending less than the price will yield nothing
+    //   await snekcointoken.mineWithSnek(sigData[0], sigData[1], sigData[2], sigData[3], 1, {from: user1, value: 10}).then(() => {
+    //     throw null;
+    //   }).catch(function(error) {
+    //     assert.isNotNull(error, "Expected revert. not enough snek paid.");
+    //   });
+    //   // Sending enough snek succeeds
+    //   await snekcointoken.mineWithSnek(sigData[0], sigData[1], sigData[2], sigData[3], 10, {from: user1});
+    //   var newUser1Balance = await snekcointoken.balanceOf(user1);
+    //   var newOwnerBalance = await snekcointoken.balanceOf(owner);
+    //   assert.equal(user1Balance.toNumber() + 990, newUser1Balance.toNumber(), "expected 990 more");
+    //   assert.equal(ownerBalance.toNumber() + 10, newOwnerBalance.toNumber(), "expected 10 more");
+    //   //replaying fails
+    //   await snekcointoken.mineWithSnek(sigData[0], sigData[1], sigData[2], sigData[3], 10, {from: user1}).then(() => {
+    //     throw null;
+    //   }).catch(function(error) {
+    //     assert.isNotNull(error, "Expected revert replaying!!");
+    //   });
+    //
+    //   // total supply should increase
+    //   var newTotalSupply = await snekcointoken.totalSupply();
+    //   assert.equal(totalSupply.toNumber() + 1000, newTotalSupply.toNumber(), "expected supply change");
+    // });
 
     it("snekcoin cannot be mined without going through proper api", async function() {
       await fakesnekcointoken.mine.sendTransaction(user1, 1000, 1000000).then(() => {
@@ -348,6 +394,28 @@ contract('Test Contracts', (accounts) => {
       }).catch(function(error) {
         assert.isNotNull(error, "Expected revert, but got none");
       });
+    });
+
+    it("snekcoin total supply is limited logarithmically", async function() {
+      var totalSupply1 = await snekcointoken.totalSupply({from: user2});
+      let tokensPerEgg = await snekcointoken.getMiningRate({from: user2});
+      assert.equal(tokensPerEgg, 512);
+
+      var totalSupply2 = await snekcointoken2.totalSupply({from: user2});
+      let tokensPerEgg2 = await snekcointoken2.getMiningRate({from: user2});
+      assert.equal(tokensPerEgg2, 512);
+
+      var totalSupply3 = await snekcointoken3.totalSupply({from: user2});
+      let tokensPerEgg3 = await snekcointoken3.getMiningRate({from: user2});
+      assert.equal(tokensPerEgg3, 1);
+
+      var totalSupply4 = await snekcointoken4.totalSupply({from: user2});
+      let tokensPerEgg4 = await snekcointoken4.getMiningRate({from: user2});
+      assert.equal(tokensPerEgg4, 0);
+
+
+
+      //snekcointoken
     });
     // it('snekcointoken can be mined by owner for a user', async () => {
     //   // mining must be approved

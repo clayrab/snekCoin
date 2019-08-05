@@ -66,6 +66,13 @@ contract SnekCoinToken is Ownable {
     emit ChangeMiningSnekPrice(msg.sender, amount);
     return ret;
   }
+  event ChangeEggPrice(address sender, uint256 amount);
+  function changeEggPrice(uint256 amount)
+  public onlyBy(owner, owner) returns(bool){
+    bool ret = back.changeEggPrice(amount);
+    emit ChangeEggPrice(msg.sender, amount);
+    return ret;
+  }
 
   function getMiningPrice()
   public view returns(uint256){
@@ -75,22 +82,31 @@ contract SnekCoinToken is Ownable {
   public view returns(uint256){
     return back.getMiningSnekPrice();
   }
+  function getEggPrice()
+  public view returns(uint256){
+    return back.getEggPrice();
+  }
+  function getMiningRate()
+  public view returns(uint256){
+    return back.getMiningRate();
+  }
   event Mine(bytes32 signedMessage, address indexed sender, uint256 amount);
-  function mine(bytes32 signedMessage, uint8 sigV, bytes32 sigR, bytes32 sigS)
+  function mine(bytes32 signedMessage, uint8 sigV, bytes32 sigR, bytes32 sigS, uint256 howManyEggs)
   public payable returns(uint256) {
-    uint256 amount = back.mine(signedMessage, sigV, sigR, sigS, msg.sender, msg.value);
+    uint256 amount = back.mine(signedMessage, sigV, sigR, sigS, msg.sender, msg.value, howManyEggs);
     emit Mine(signedMessage, msg.sender, msg.value);
     emit Transfer(0x0000000000000000000000000000000000000000, msg.sender, amount);
     return amount;
   }
-  event MineWithSnek(bytes32 signedMessage, address indexed sender, uint256 amount);
-  function mineWithSnek(bytes32 signedMessage, uint8 sigV, bytes32 sigR, bytes32 sigS, uint256 payAmount)
-  public returns(uint256) {
-    uint256 amount = back.mineWithSnek(signedMessage, sigV, sigR, sigS, msg.sender, payAmount);
-    emit MineWithSnek(signedMessage, msg.sender, payAmount);
-    emit Transfer(0x0000000000000000000000000000000000000000, msg.sender, amount);
-    return amount;
-  }
+  // event MineWithSnek(bytes32 signedMessage, address indexed sender, uint256 amount);
+  // function mineWithSnek(bytes32 signedMessage, uint8 sigV, bytes32 sigR, bytes32 sigS, uint256 payAmount)
+  // public returns(uint256) {
+  //   uint256 amount = back.mineWithSnek(signedMessage, sigV, sigR, sigS, msg.sender, payAmount);
+  //   emit MineWithSnek(signedMessage, msg.sender, payAmount);
+  //   emit Transfer(0x0000000000000000000000000000000000000000, msg.sender, amount);
+  //   return amount;
+  // }
+
   // event MineForUser(address indexed sender, uint256 amount);
   // function mineForUser(address user, uint256 amount)
   // public onlyBy(owner, owner) returns(uint256) {

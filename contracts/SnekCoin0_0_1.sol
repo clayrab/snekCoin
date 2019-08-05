@@ -5,6 +5,7 @@ import "../contracts/lib/SafeMath.sol";
 
 library SnekCoin0_0_1 {
   using SafeMath for uint;
+  uint32 constant tokensPerLevel = 1024 * 10000;
 
   modifier onlyBy(address account1, address account2) {
     require(
@@ -27,6 +28,10 @@ library SnekCoin0_0_1 {
   public onlyBy(s.root, s.root) returns(bool){
     s.snekPriceToMine = amount;
   }
+  function changeEggPrice(LibInterface.S storage s, uint256 amount)
+  public onlyBy(s.root, s.root) returns(bool){
+    s.weiPricePerEgg = amount;
+  }
 
   function getMiningPrice(LibInterface.S storage s)
   public view onlyBy(s.root, s.root) returns(uint256){
@@ -36,8 +41,67 @@ library SnekCoin0_0_1 {
   public view onlyBy(s.root, s.root) returns(uint256){
     return s.snekPriceToMine;
   }
-
-  function mine(LibInterface.S storage s, bytes32 signedMessage, uint8 sigV, bytes32 sigR, bytes32 sigS, address sender, uint256 value)
+  function getEggPrice(LibInterface.S storage s)
+  public view onlyBy(s.root, s.root) returns(uint256){
+    return s.weiPricePerEgg;
+  }
+  function getMiningRate(LibInterface.S storage s)
+  public view onlyBy(s.root, s.root) returns(uint256){
+    if (s.totalSupp < tokensPerLevel) {
+      return 1024;
+    } else if (s.totalSupp < 2 * tokensPerLevel) {
+      return 512;
+    } else if (s.totalSupp < 3 * tokensPerLevel) {
+      return 256;
+    } else if (s.totalSupp < 4 * tokensPerLevel) {
+      return 128;
+    } else if (s.totalSupp < 5 * tokensPerLevel) {
+      return 64;
+    } else if (s.totalSupp < 6 * tokensPerLevel) {
+      return 32;
+    } else if (s.totalSupp < 7 * tokensPerLevel) {
+      return 16;
+    } else if (s.totalSupp < 8 * tokensPerLevel) {
+      return 8;
+    } else if (s.totalSupp < 9 * tokensPerLevel) {
+      return 4;
+    } else if (s.totalSupp < 10 * tokensPerLevel) {
+      return 2;
+    } else if (s.totalSupp < 11 * tokensPerLevel) {
+      return 1;
+    } else {
+      return 0;
+    }
+  }
+  function getMiningRatePriv(uint256 totalSupp)
+  private view returns(uint256){
+    if (totalSupp < tokensPerLevel) {
+      return 1024;
+    } else if (totalSupp < 2 * tokensPerLevel) {
+      return 512;
+    } else if (totalSupp < 3 * tokensPerLevel) {
+      return 256;
+    } else if (totalSupp < 4 * tokensPerLevel) {
+      return 128;
+    } else if (totalSupp < 5 * tokensPerLevel) {
+      return 64;
+    } else if (totalSupp < 6 * tokensPerLevel) {
+      return 32;
+    } else if (totalSupp < 7 * tokensPerLevel) {
+      return 16;
+    } else if (totalSupp < 8 * tokensPerLevel) {
+      return 8;
+    } else if (totalSupp < 9 * tokensPerLevel) {
+      return 4;
+    } else if (totalSupp < 10 * tokensPerLevel) {
+      return 2;
+    } else if (totalSupp < 11 * tokensPerLevel) {
+      return 1;
+    } else {
+      return 0;
+    }
+  }
+  function mine(LibInterface.S storage s, bytes32 signedMessage, uint8 sigV, bytes32 sigR, bytes32 sigS, address sender, uint256 value, uint256 howManyEggs)
   public onlyBy(s.root, s.root) returns(uint256) {
     // Data is 3 uints packed into bytes32 as hex: 1337beef + pubkey + allowance nonce + amount.
     // pubkey = 20 bytes, nonce = 4 bytes, amount = 4 bytes.
@@ -49,34 +113,36 @@ library SnekCoin0_0_1 {
     uint32 nonce = uint32(rawData & (2**32-1));
     rawData = rawData / (2**32);
     address user = address(rawData);
-    require(value >= s.weiPriceToMine, "Not enough ethereum");
+
     require(ecrecover(keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", signedMessage)), sigV, sigR, sigS) == s.owner, "Not approved by owner");
     require(user == sender, "Not Approved User");
     require(nonce == s.allowanceNonces[sender] , "Not Approved Nonce");
+    require(value == (howManyEggs * s.weiPricePerEgg) + s.weiPriceToMine, "Not enough ethereum");
+    require(amount == howManyEggs * getMiningRatePriv(s.totalSupp), "Amount approved does not match.");
     s.balances[sender] = SafeMath.add(s.balances[sender], amount);
     s.allowanceNonces[sender] = s.allowanceNonces[sender] + 1;
     s.totalSupp = SafeMath.add(s.totalSupp, amount);
     return amount;
   }
-  function mineWithSnek(LibInterface.S storage s, bytes32 signedMessage, uint8 sigV, bytes32 sigR, bytes32 sigS, address sender, uint256 payAmount)
-  public onlyBy(s.root, s.root) returns(uint256){
-    uint256 rawData = uint256(signedMessage) & (2**224-1);
-    uint32 amount = uint32(rawData & (2**32-1));
-    rawData = rawData / (2**32);
-    uint32 nonce = uint32(rawData & (2**32-1));
-    rawData = rawData / (2**32);
-    //address user = address(rawData);
-    require(payAmount >= s.snekPriceToMine, "Not enough snek sent");
-    //require(amount - payAmount >= s.balances[sender], "Not enough snek in wallet");
-    require(ecrecover(keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", signedMessage)), sigV, sigR, sigS) == s.owner, "Not approved by owner");
-    require(address(rawData) == sender, "Not Approved User");
-    require(nonce == s.allowanceNonces[sender] , "Not Approved Nonce");
-    s.balances[sender] = SafeMath.sub(SafeMath.add(s.balances[sender], amount), payAmount);
-    s.balances[s.owner] = SafeMath.add(s.balances[s.owner], payAmount);
-    s.allowanceNonces[sender] = s.allowanceNonces[sender] + 1;
-    s.totalSupp = SafeMath.add(s.totalSupp, amount);
-    return amount;
-  }
+  // function mineWithSnek(LibInterface.S storage s, bytes32 signedMessage, uint8 sigV, bytes32 sigR, bytes32 sigS, address sender, uint256 payAmount)
+  // public onlyBy(s.root, s.root) returns(uint256){
+  //   uint256 rawData = uint256(signedMessage) & (2**224-1);
+  //   uint32 amount = uint32(rawData & (2**32-1));
+  //   rawData = rawData / (2**32);
+  //   uint32 nonce = uint32(rawData & (2**32-1));
+  //   rawData = rawData / (2**32);
+  //   //address user = address(rawData);
+  //   require(payAmount >= s.snekPriceToMine, "Not enough snek sent");
+  //   //require(amount - payAmount >= s.balances[sender], "Not enough snek in wallet");
+  //   require(ecrecover(keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", signedMessage)), sigV, sigR, sigS) == s.owner, "Not approved by owner");
+  //   require(address(rawData) == sender, "Not Approved User");
+  //   require(nonce == s.allowanceNonces[sender] , "Not Approved Nonce");
+  //   s.balances[sender] = SafeMath.sub(SafeMath.add(s.balances[sender], amount), payAmount);
+  //   s.balances[s.owner] = SafeMath.add(s.balances[s.owner], payAmount);
+  //   s.allowanceNonces[sender] = s.allowanceNonces[sender] + 1;
+  //   s.totalSupp = SafeMath.add(s.totalSupp, amount);
+  //   return amount;
+  // }
 
   function mineForUser(LibInterface.S storage s, address user, uint256 amount)
   public onlyBy(s.root, s.root) returns(uint256) {

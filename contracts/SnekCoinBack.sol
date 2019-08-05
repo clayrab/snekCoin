@@ -86,10 +86,13 @@ contract SnekCoinBack is Ownable {
   public onlyBy(s.root, s.root) returns(bool){
     return s.changeMiningPrice(amount);
   }
-
   function changeMiningSnekPrice(uint256 amount)
   public onlyBy(s.root, s.root) returns(bool){
     return s.changeMiningSnekPrice(amount);
+  }
+  function changeEggPrice(uint256 amount)
+  public onlyBy(s.root, s.root) returns(bool){
+    return s.changeEggPrice(amount);
   }
 
   function getMiningPrice()
@@ -100,16 +103,24 @@ contract SnekCoinBack is Ownable {
   public view returns(uint256){
     return s.getMiningSnekPrice();
   }
+  function getEggPrice()
+  public view returns(uint256){
+    return s.getEggPrice();
+  }
 
+  function getMiningRate()
+  public view returns(uint256){
+    return s.getMiningRate();
+  }
   //function mine(uint256 amount, address sender, uint256 value)
-  function mine(bytes32 signedMessage, uint8 sigV, bytes32 sigR, bytes32 sigS, address sender, uint256 value)
+  function mine(bytes32 signedMessage, uint8 sigV, bytes32 sigR, bytes32 sigS, address sender, uint256 value, uint256 howManyEggs)
   public onlyBy(s.root, s.root) returns(uint256) {
-    return s.mine(signedMessage, sigV, sigR, sigS, sender, value);
+    return s.mine(signedMessage, sigV, sigR, sigS, sender, value, howManyEggs);
   }
-  function mineWithSnek(bytes32 signedMessage, uint8 sigV, bytes32 sigR, bytes32 sigS, address sender, uint256 payAmount)
-  public onlyBy(s.root, s.root) returns(uint256) {
-    return s.mineWithSnek(signedMessage, sigV, sigR, sigS, sender, payAmount);
-  }
+  // function mineWithSnek(bytes32 signedMessage, uint8 sigV, bytes32 sigR, bytes32 sigS, address sender, uint256 payAmount)
+  // public onlyBy(s.root, s.root) returns(uint256) {
+  //   return s.mineWithSnek(signedMessage, sigV, sigR, sigS, sender, payAmount);
+  // }
 
   // function mineForUser(address user, uint256 amount)
   // public onlyBy(s.root, s.root) returns(uint256) {
