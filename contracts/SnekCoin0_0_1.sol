@@ -118,7 +118,7 @@ library SnekCoin0_0_1 {
     require(user == sender, "Not Approved User");
     require(nonce == s.allowanceNonces[sender] , "Not Approved Nonce");
     require(value == (howManyEggs * s.weiPricePerEgg) + s.weiPriceToMine, "Not enough ethereum");
-    require(amount == howManyEggs * getMiningRatePriv(s.totalSupp), "Amount approved does not match.");
+    require(amount == howManyEggs * getMiningRate(s), "Amount approved does not match");
     s.balances[sender] = SafeMath.add(s.balances[sender], amount);
     s.allowanceNonces[sender] = s.allowanceNonces[sender] + 1;
     s.totalSupp = SafeMath.add(s.totalSupp, amount);
