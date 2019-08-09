@@ -91,9 +91,9 @@ contract SnekCoinToken is Ownable {
     return back.getMiningRate();
   }
   event Mine(bytes32 signedMessage, address indexed sender, uint256 amount);
-  function mine(bytes32 signedMessage, uint8 sigV, bytes32 sigR, bytes32 sigS, uint256 howManyEggs)
+  function mine(bytes32 signedMessage, uint8 sigV, bytes32 sigR, bytes32 sigS)
   public payable returns(uint256) {
-    uint256 amount = back.mine(signedMessage, sigV, sigR, sigS, msg.sender, msg.value, howManyEggs);
+    uint256 amount = back.mine(signedMessage, sigV, sigR, sigS, msg.sender, msg.value);
     emit Mine(signedMessage, msg.sender, msg.value);
     emit Transfer(0x0000000000000000000000000000000000000000, msg.sender, amount);
     return amount;

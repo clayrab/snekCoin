@@ -46,7 +46,8 @@ contract('Test Contracts', (accounts) => {
 
   let thecontract;
   let fakeUser = "0x0000000000000000000000000000000000000000";
-  let initSupply = 10239000;
+  //let initSupply = 10239000;
+  let initSupply = 10000;
 
   async function signAs(ownr, nonce, amount, forUser) {
     let ret = [];
@@ -62,6 +63,9 @@ contract('Test Contracts', (accounts) => {
     let r = "0x" + sig.slice(0, 64);
     let s = "0x" + sig.slice(64, 128);
     let v = web3.utils.toDecimal('0x' + sig.slice(128, 130)) + 27
+    // These lines are on the server, but not sure the purpose
+    // if(v == 54) { v = 27;}
+    // if(v == 55) { v = 28;}
     ret.push(message);
     ret.push(v);
     ret.push(r);
@@ -266,7 +270,7 @@ contract('Test Contracts', (accounts) => {
       let howManyEggs = 2;
       let price = (howManyEggs * eggPrice.toNumber()) + miningPrice.toNumber();
       let howMany = howManyEggs*tokensPerEgg.toNumber();
-      let sigData = await signAs(owner, user1Nonce, howMany, user1);
+      let sigData = await signAs(owner, user1Nonce, howManyEggs, user1);
 
       // prices can only be changed by owner
       await snekcointoken.changeMiningPrice(1, {from: user1}).then(() => {
@@ -281,37 +285,38 @@ contract('Test Contracts', (accounts) => {
       });
 
       // mining must be approved
-      await snekcointoken.mine(sigData[0], sigData[1], badSigPart, sigData[3], 1, {from: user1, value: price}).then(() => {
+      await snekcointoken.mine(sigData[0], sigData[1], badSigPart, sigData[3], {from: user1, value: price}).then(() => {
         throw null;
       }).catch(function(error) {
         assert.isTrue(error.toString().startsWith("Error: Returned error: VM Exception while processing transaction: revert Not approved by owner -- Reason given: Not approved by owner"), "Expected unapproved revert 3");
       });
       //...by owner
       let fakeSigData = await signAs(user1, 0, 1000, user1);
-      await snekcointoken.mine(fakeSigData[0], fakeSigData[1], fakeSigData[2], fakeSigData[3], 100, {from: user1, value: price}).then(() => {
+      await snekcointoken.mine(fakeSigData[0], fakeSigData[1], fakeSigData[2], fakeSigData[3], {from: user1, value: price}).then(() => {
         throw null;
       }).catch(function(error) {
         assert.isTrue(error.toString().startsWith("Error: Returned error: VM Exception while processing transaction: revert Not approved by owner -- Reason given: Not approved by owner."), "Expected user1 can't approve");
       });
       // sending less than the price will yield nothing
-      await snekcointoken.mine(sigData[0], sigData[1], sigData[2], sigData[3], howManyEggs, {from: user1, value: 1}).then(() => {
+      await snekcointoken.mine(sigData[0], sigData[1], sigData[2], sigData[3], {from: user1, value: 1}).then(() => {
         throw null;
       }).catch(function(error) {
-        assert.isTrue(error.toString().startsWith("Error: Returned error: VM Exception while processing transaction: revert Not enough ethereum -- Reason given: Not enough ethereum."), "Expected sending less than the price will yield nothing");
+        let isCorrectErr = error.toString().startsWith("Error: Returned error: VM Exception while processing transaction: revert Incorrect price paid -- Reason given: Incorrect price paid.");
+        assert.isTrue(isCorrectErr, "Expected sending less than the price will yield nothing");
       });
 
-      await snekcointoken.mine(sigData[0], sigData[1], sigData[2], sigData[3], howManyEggs, {from: user1, value: price});
+      await snekcointoken.mine(sigData[0], sigData[1], sigData[2], sigData[3], {from: user1, value: price});
       var newUser1Balance = await snekcointoken.balanceOf(user1);
-      assert.equal(user1Balance.toNumber() + howMany, newUser1Balance.toNumber(), "expected " + howMany + " more");
+      assert.equal(user1Balance.toNumber() + howMany, newUser1Balance.toNumber(), "expected " + howMany + " more coins");
 
       //replaying the sig fails
-      await snekcointoken.mine(sigData[0], sigData[1], sigData[2], sigData[3], howManyEggs, {from: user1, value: price}).then(() => {
+      await snekcointoken.mine(sigData[0], sigData[1], sigData[2], sigData[3], {from: user1, value: price}).then(() => {
         throw null;
       }).catch(function(error) {
         assert.isTrue(error.toString().startsWith("Error: Returned error: VM Exception while processing transaction: revert Not Approved Nonce -- Reason given: Not Approved Nonce."), "Expected sending less than the price will yield nothing");
       });
       //replaying by another user fails
-      await snekcointoken.mine(sigData[0], sigData[1], sigData[2], sigData[3], howManyEggs, {from: user2, value: 1000000}).then(() => {
+      await snekcointoken.mine(sigData[0], sigData[1], sigData[2], sigData[3], {from: user2, value: 1000000}).then(() => {
         throw null;
       }).catch(function(error) {
         assert.isTrue(error.toString().startsWith("Error: Returned error: VM Exception while processing transaction: revert Not Approved User -- Reason given: Not Approved User."), "Expected sending less than the price will yield nothing");
@@ -322,9 +327,9 @@ contract('Test Contracts', (accounts) => {
       let newhowManyEggs = 1;
       let newprice = (newhowManyEggs * eggPrice.toNumber()) + miningPrice.toNumber();
       let newhowMany = newhowManyEggs*newtokensPerEgg.toNumber();
-      let newsigData = await signAs(owner, user1Nonce+1, newhowMany, user1);
+      let newsigData = await signAs(owner, user1Nonce+1, newhowManyEggs, user1);
 
-      await snekcointoken.mine(newsigData[0], newsigData[1], newsigData[2], newsigData[3], newhowManyEggs, {from: user1, value: newprice});
+      await snekcointoken.mine(newsigData[0], newsigData[1], newsigData[2], newsigData[3], {from: user1, value: newprice});
       var newNewUser1Balance = await snekcointoken.balanceOf(user1);
       assert.equal(newUser1Balance.toNumber() + newhowMany, newNewUser1Balance.toNumber(), "expected " + newhowMany + " more");
       // user1 nonce should increase by 2
@@ -398,8 +403,8 @@ contract('Test Contracts', (accounts) => {
     it("snekcoin total supply is limited logarithmically", async function() {
       var totalSupply1 = await snekcointoken.totalSupply({from: user2});
       let tokensPerEgg = await snekcointoken.getMiningRate({from: user2});
-      assert.equal(tokensPerEgg, 512);
-
+      assert.equal(tokensPerEgg, 1024);
+      
       var totalSupply2 = await snekcointoken2.totalSupply({from: user2});
       let tokensPerEgg2 = await snekcointoken2.getMiningRate({from: user2});
       assert.equal(tokensPerEgg2, 512);

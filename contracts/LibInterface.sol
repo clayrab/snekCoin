@@ -48,7 +48,7 @@ library LibInterface {
   function getMiningSnekPrice(S storage s) public view returns(uint256);
   function getEggPrice(S storage s) public view returns(uint256);
   function getMiningRate(S storage s) public view returns(uint256);
-  function mine(S storage s, bytes32 signedMessage, uint8 sigV, bytes32 sigR, bytes32 sigS, address sender, uint256 value, uint256 howManyEggs) public returns(uint256);
+  function mine(S storage s, bytes32 signedMessage, uint8 sigV, bytes32 sigR, bytes32 sigS, address sender, uint256 value) public returns(uint256);
   // function mineWithSnek(S storage s, bytes32 signedMessage, uint8 sigV, bytes32 sigR, bytes32 sigS, address sender, uint256 payAmount) public returns(uint256);
   // function mineForUser(S storage s, address user, uint256 amount) public returns(uint256);
   function getUserNonce(S storage s, address who) public view returns(uint32);

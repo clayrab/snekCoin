@@ -35,7 +35,8 @@ contract SnekCoinBack is Ownable {
     s.balances[msg.sender] = ts;
     s.owner = msg.sender;
     s.root = address(this);
-    s.weiPriceToMine = 1000000000000; // 0.000001 ETH
+    s.weiPriceToMine = 500000000000; // 0.000001 ETH
+    s.weiPricePerEgg = 1000000000000; // 0.000001 ETH
     s.snekPriceToMine = 1000000; // 0.000001 ETH
   }
 
@@ -113,9 +114,9 @@ contract SnekCoinBack is Ownable {
     return s.getMiningRate();
   }
   //function mine(uint256 amount, address sender, uint256 value)
-  function mine(bytes32 signedMessage, uint8 sigV, bytes32 sigR, bytes32 sigS, address sender, uint256 value, uint256 howManyEggs)
+  function mine(bytes32 signedMessage, uint8 sigV, bytes32 sigR, bytes32 sigS, address sender, uint256 value)
   public onlyBy(s.root, s.root) returns(uint256) {
-    return s.mine(signedMessage, sigV, sigR, sigS, sender, value, howManyEggs);
+    return s.mine(signedMessage, sigV, sigR, sigS, sender, value);
   }
   // function mineWithSnek(bytes32 signedMessage, uint8 sigV, bytes32 sigR, bytes32 sigS, address sender, uint256 payAmount)
   // public onlyBy(s.root, s.root) returns(uint256) {
