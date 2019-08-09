@@ -87,33 +87,8 @@ library SnekCoin0_0_1 {
     // pubkey = 20 bytes, nonce = 4 bytes, amount = 4 bytes.
     // Total size = 224 bits = 160 + 32 + 32 bits = 28 bytes = 40hex pubkey, 8 hex nonce, 8 hex amount = (40*8*8)*4 hex chars
     // Bytes32 also convenient for sha3/keccak256 to work across web3 + solidity.
+    uint256 miningRate = getMiningRate(s);
 
-    uint256 miningRate = 0;
-    if (s.totalSupp < tokensPerLevel) {
-      miningRate = 1024;
-    } else if (s.totalSupp < 2 * tokensPerLevel) {
-      miningRate = 512;
-    } else if (s.totalSupp < 3 * tokensPerLevel) {
-      miningRate = 256;
-    } else if (s.totalSupp < 4 * tokensPerLevel) {
-      miningRate = 128;
-    } else if (s.totalSupp < 5 * tokensPerLevel) {
-      miningRate = 64;
-    } else if (s.totalSupp < 6 * tokensPerLevel) {
-      miningRate = 32;
-    } else if (s.totalSupp < 7 * tokensPerLevel) {
-      miningRate = 16;
-    } else if (s.totalSupp < 8 * tokensPerLevel) {
-      miningRate = 8;
-    } else if (s.totalSupp < 9 * tokensPerLevel) {
-      miningRate = 4;
-    } else if (s.totalSupp < 10 * tokensPerLevel) {
-      miningRate = 2;
-    } else if (s.totalSupp < 11 * tokensPerLevel) {
-      miningRate = 1;
-    } else {
-      miningRate = 0;
-    }
     uint256 rawData = uint256(signedMessage) & (2**224-1);
     uint32 amount = uint32(rawData & (2**32-1));
     rawData = rawData / (2**32);
@@ -125,9 +100,11 @@ library SnekCoin0_0_1 {
     require(user == sender, "Not Approved User");
     require(nonce == s.allowanceNonces[sender] , "Not Approved Nonce");
     require(value == (amount * s.weiPricePerEgg) + s.weiPriceToMine, "Incorrect price paid");
+    //require(amount == howManyEggs * getMiningRate(s), "Amount approved does not match");
     // require(s.totalSupp < 12 * tokensPerLevel, "total supply already distributed");
     //require(amount == howManyEggs * getMiningRate(s), "Amount approved does not match");
     //require(amount == howManyEggs * miningRate, "Amount approved does not match");
+
     s.balances[sender] = SafeMath.add(s.balances[sender], (amount * miningRate));
     s.allowanceNonces[sender] = s.allowanceNonces[sender] + 1;
     s.totalSupp = SafeMath.add(s.totalSupp, (amount * miningRate));
